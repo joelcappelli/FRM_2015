@@ -134,10 +134,7 @@ for i = 1:numBonds
     couponBond_Portfolio(i).ZCB_yearFrac = couponBond_ZCB_yearFrac;
 end
 
-covar_couponBond_Portfolio = zeros(numRF,numRF);
-x_couponBond_Portfolio = zeros(numRF,1);
-
-
+covar_couponBond_Portfolio = 
 end
 
 function [colNumeric, varargout] = returnColData(sheetName,codeString,sheetNames,workbookDates,workbookCodes,workbookNumericData)
