@@ -2,6 +2,20 @@
 %% Financial Risk Management Ass Spring 2015
 % Joel Cappelli
 % 12137384
+
+% questions to ask;
+% MTM valuation
+
+%% bond portfolio
+% do we have to worry about accrued interest of each bond?
+% vale working back from maturity to each coupon date by frequency, do we
+% have to match to mentioned next coupon payment?
+% cont compounding ok?
+% assume linear interpolation between yield rates
+% do we take all the yields in the data set for the diff and build covar
+% matrix (if not, how many years back from valuation date?)
+
+%%
 function [] = FRM_2015_main()
          
 close all;
@@ -72,22 +86,39 @@ else
     save('workbookNumericData.mat','workbookNumericData');
 end
 
+%% test to grab some data
 [BBSR5M,dates] = returnColData('Interest Rate Swap Data','BBSR5M',workbookSheetNames,workbookDates,workbookCodes,workbookNumericData);
 [BBSR5M_check] = returnColData('Interest Rate Swap Data','BBSR5M',workbookSheetNames,workbookDates,workbookCodes,workbookNumericData);
 
 [AUD_INR,dates] = returnColData('exchange_rates','AUD $ TO INR (Indian Rupee)',workbookSheetNames,workbookDates,workbookCodes,workbookNumericData);
 [AUD_INR_check] = returnColData('exchange_rates','AUD $ TO INR (Indian Rupee)',workbookSheetNames,workbookDates,workbookCodes,workbookNumericData);
 
-%%add next coupon date to struct and also coupon rate timing i.e.
-%%semi-annual
+[yields,yearCodes] = returnRowData('AUSTRALIA_ZERO_CURVE',workbookSheetNames,workbookDates,workbookCodes,workbookNumericData,valuationDate);
+[exRate,exRCodes] = returnRowData('exchange_rates',workbookSheetNames,workbookDates,workbookCodes,workbookNumericData,valuationDate);
+
+%%
+% Portfolio 1
+% Physical Bonds
+% Issuer Coupon rate
+% p.a
+% Maturity Next Coupon
+% Date
+% Face Value
+% (Millions)
+% Com G 4.75% 15-Jun-2016 15-Dec-2015 10
+% Com G 4.25% 21-Jul-2017 21-Jan-2016 5
+% Com G 5.50% 21-Jan-2018 21-Jan-2016 8
+% Com G 5.25% 15-Mar-2019 15-Sep-2015 10
+% Com G 4.50% 15-Apr-2020 15-Oct-2015 5
+
 couponBond1 = struct('Price',0,'C_rate_pa',0.0475,'Maturity',datenum('15/06/2016',formatIn),'FV_millions',10,'C_frequ',0.5,'RF',[],'PV_CF',[],'ZCB_yearFrac',[]);
 couponBond2 = struct('Price',0,'C_rate_pa',0.0425,'Maturity',datenum('21/07/2017 ',formatIn),'FV_millions',5,'C_frequ',0.5,'RF',[],'PV_CF',[],'ZCB_yearFrac',[]);
 couponBond3 = struct('Price',0,'C_rate_pa',0.055,'Maturity',datenum('21/01/2018',formatIn),'FV_millions',8,'C_frequ',0.5,'RF',[],'PV_CF',[],'ZCB_yearFrac',[]);
 couponBond4 = struct('Price',0,'C_rate_pa',0.0525,'Maturity',datenum('15/03/2019 ',formatIn),'FV_millions',10,'C_frequ',0.5,'RF',[],'PV_CF',[],'ZCB_yearFrac',[]);
 couponBond5 = struct('Price',0,'C_rate_pa',0.045,'Maturity',datenum('15/04/2019 ',formatIn),'FV_millions',5,'C_frequ',0.5,'RF',[],'PV_CF',[],'ZCB_yearFrac',[]);   
                  
-couponBond_Portfolio = [couponBond1 couponBond2 couponBond3 couponBond4 couponBond5];
-numBonds = size(couponBond_Portfolio,2);
+couponBond_Portfolio = struct('CouponBonds',[couponBond1 couponBond2 couponBond3 couponBond4 couponBond5],'Price',0,'RF',[],'x',[]);
+numBonds = size(couponBond_Portfolio.CouponBonds,2);
 
 [valuDateYearFracs, codes, valuDateYields] = returnYieldCurveData('AUSTRALIA_ZERO_CURVE',workbookSheetNames,workbookDates,workbookCodes,workbookNumericData,valuationDate);
 
@@ -95,18 +126,20 @@ numBonds = size(couponBond_Portfolio,2);
 %decomposed into ZCB with assoicated linearly interpolated yield data for
 %each cash flow 
 numRF = 0;
+% make sure each risk factor is column vector to be used with covar matlab
+% method
 for i = 1:numBonds
 
     couponBond_RF = [];
     couponBond_PV_CF = [];
     couponBond_ZCB_yearFrac = [];
-    
     couponBond_Price = 0;
-    FV = couponBond_Portfolio(i).FV_millions;
-    couponRate = couponBond_Portfolio(i).C_rate_pa*couponBond_Portfolio(i).C_frequ;
-    maturityPayment = 1;
     
-    couponDateYearFrac = yearfrac(valuationDate,couponBond_Portfolio(i).Maturity,1);
+    FV = couponBond_Portfolio.CouponBonds(i).FV_millions;
+    couponRate = couponBond_Portfolio.CouponBonds(i).C_rate_pa*couponBond_Portfolio.CouponBonds(i).C_frequ;
+    
+    couponDateYearFrac = yearfrac(valuationDate,couponBond_Portfolio.CouponBonds(i).Maturity,1);
+    maturityPayment = 1;
     while(couponDateYearFrac > 0)        
         ZCB = ZCB_price_One(couponDateYearFrac,interpolYield(couponDateYearFrac,valuDateYearFracs,valuDateYields));
         if(maturityPayment)
@@ -117,25 +150,61 @@ for i = 1:numBonds
         end
 
         numRF = numRF + 1;
-        couponBond_RF = [couponBond_RF, ZCB_riskFactor(couponDateYearFrac,valuDateYearFracs,codes,workbookSheetNames,workbookDates,workbookCodes,workbookNumericData)];
+        couponBond_Portfolio.RF(:,numRF) = ZCB_riskFactor(couponDateYearFrac,valuDateYearFracs,codes,workbookSheetNames,workbookDates,workbookCodes,workbookNumericData);
+        couponBond_RF = [couponBond_RF, couponBond_Portfolio.RF(:,numRF)];
+        couponBond_Portfolio.x(numRF,:) = PV_CF*couponDateYearFrac;
         couponBond_PV_CF = [couponBond_PV_CF,PV_CF];
         couponBond_ZCB_yearFrac = [couponBond_ZCB_yearFrac,couponDateYearFrac];
         
-        couponDateYearFrac = couponDateYearFrac - couponBond_Portfolio(i).C_frequ;
+        couponDateYearFrac = couponDateYearFrac - couponBond_Portfolio.CouponBonds(i).C_frequ;
+        couponBond_Price = couponBond_Price + PV_CF;
     end
     
     %work out accural interest since last coupon date
-    couponDateYearFrac = couponDateYearFrac + couponBond_Portfolio(i).C_frequ;
-    couponBond_Price = couponBond_Price + couponRate*FV*couponDateYearFrac/couponBond_Portfolio(i).C_frequ;  
-    couponBond_Portfolio(i).Price = couponBond_Price;
+    couponDateYearFrac = couponDateYearFrac + couponBond_Portfolio.CouponBonds(i).C_frequ;
+    couponBond_Price = couponBond_Price + couponRate*FV*couponDateYearFrac/couponBond_Portfolio.CouponBonds(i).C_frequ;  
+    couponBond_Portfolio.CouponBonds(i).Price = couponBond_Price;
     
-    couponBond_Portfolio(i).RF = couponBond_RF;
-    couponBond_Portfolio(i).PV_CF = couponBond_PV_CF;
-    couponBond_Portfolio(i).ZCB_yearFrac = couponBond_ZCB_yearFrac;
+    couponBond_Portfolio.CouponBonds(i).RF = couponBond_RF;
+    couponBond_Portfolio.CouponBonds(i).PV_CF = couponBond_PV_CF;
+    couponBond_Portfolio.CouponBonds(i).ZCB_yearFrac = couponBond_ZCB_yearFrac;
+    
+    couponBond_Portfolio.Price = couponBond_Portfolio.Price + couponBond_Price;
 end
 
-covar_couponBond_Portfolio = zeros(numRF,numRF);
-x_couponBond_Portfolio = zeros(numRF,1);
+CI = 0.99;
+alpha = norminv(CI)
+couponBond_Portfolio.Price
+couponBond_Portfolio_VAR = alpha*sqrt(couponBond_Portfolio.x'*cov(diff(couponBond_Portfolio.RF,1,1))*couponBond_Portfolio.x)
+
+%%
+% Spot Foreign Exchange
+% Currency Currency
+% Description
+% AUD
+% Million
+% Equivalents
+% USD US $ -40
+% EUR Euro 60
+% GBP UK £ 55
+% NZD New Zealand $ 30
+% INR Indian Rupee -50
+% JPY Yen -30
+
+%AUD $ to US $	 AUD $ TO UK £  	 AUD $ TO EURO	AUD $ TO CHF	AUD $ TO INR (Indian Rupee)	AUD $ TO NZD $	AUD $ TO JPY
+
+currency1 = struct('Price',-40,'exchaRateCode','AUD $ to US $','Currency','USD');
+currency2 = struct('Price',0,'exchaRateCode',0.0425,'Currency',datenum('15/06/2016',formatIn));
+currency3 = struct('Price',0,'exchaRateCode',0.055,'Currency',datenum('15/06/2016',formatIn));
+currency4 = struct('Price',0,'exchaRateCode',0.0525,'Currency',datenum('15/06/2016',formatIn));
+currency5 = struct('Price',0,'exchaRateCode',0.045,'Currency',datenum('15/06/2016',formatIn));  
+                 
+couponBond_Portfolio = struct('CouponBonds',[couponBond1 couponBond2 couponBond3 couponBond4 couponBond5],'Price',0,'RF',[],'x',[]);
+
+
+
+
+
 
 
 end
@@ -149,6 +218,18 @@ function [colNumeric, varargout] = returnColData(sheetName,codeString,sheetNames
     nout = max(nargout,1)-1;
     if(nout > 0)
         varargout{1} = workbookDates{sheetIndex};
+    end
+end
+
+function [rowNumeric,varargout] = returnRowData(sheetName,sheetNames,workbookDates,workbookCodes,workbookNumericData,valuationDate) 
+    sheetIndex = strcmp(sheetNames',sheetName);
+    sheetNumericData = workbookNumericData{sheetIndex};
+    rowIndex = find(workbookDates{sheetIndex}== valuationDate);
+    rowNumeric = sheetNumericData(rowIndex,:);
+    
+    nout = max(nargout,1)-1;
+    if(nout > 0)
+        varargout{1} = workbookCodes{sheetIndex};
     end
 end
 
@@ -194,7 +275,7 @@ price = exp(-maturityYears*yield);
 end
 
 function intepYield = interpolYield(yearFrac,setYearFracs,setYields)
-minDateLoc = min(find(yearFrac < setYearFracs))-1;
+minDateLoc = min(find(yearFrac < setYearFracs))-1; %#ok<MXFND>
 intepYield = setYields(minDateLoc) + (yearFrac - setYearFracs(minDateLoc)).*(setYields(minDateLoc + 1) - setYields(minDateLoc))./(setYearFracs(minDateLoc + 1) - setYearFracs(minDateLoc));
 end
 
