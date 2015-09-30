@@ -111,11 +111,11 @@ end
 % Com G 5.25% 15-Mar-2019 15-Sep-2015 10
 % Com G 4.50% 15-Apr-2020 15-Oct-2015 5
 
-couponBond1 = struct('Price',0,'C_rate_pa',0.0475,'Maturity',datenum('15/06/2016',formatIn),'FV_millions',10,'C_frequ',0.5,'RF',[],'PV_CF',[],'ZCB_yearFrac',[]);
-couponBond2 = struct('Price',0,'C_rate_pa',0.0425,'Maturity',datenum('21/07/2017 ',formatIn),'FV_millions',5,'C_frequ',0.5,'RF',[],'PV_CF',[],'ZCB_yearFrac',[]);
-couponBond3 = struct('Price',0,'C_rate_pa',0.055,'Maturity',datenum('21/01/2018',formatIn),'FV_millions',8,'C_frequ',0.5,'RF',[],'PV_CF',[],'ZCB_yearFrac',[]);
-couponBond4 = struct('Price',0,'C_rate_pa',0.0525,'Maturity',datenum('15/03/2019 ',formatIn),'FV_millions',10,'C_frequ',0.5,'RF',[],'PV_CF',[],'ZCB_yearFrac',[]);
-couponBond5 = struct('Price',0,'C_rate_pa',0.045,'Maturity',datenum('15/04/2019 ',formatIn),'FV_millions',5,'C_frequ',0.5,'RF',[],'PV_CF',[],'ZCB_yearFrac',[]);   
+couponBond1 = struct('Price',0,'C_rate_pa',0.0475,'Maturity',datenum('15/06/2016',formatIn),'FV',10,'C_frequ',0.5,'RF',[],'PV_CF',[],'ZCB_yearFrac',[]);
+couponBond2 = struct('Price',0,'C_rate_pa',0.0425,'Maturity',datenum('21/07/2017 ',formatIn),'FV',5,'C_frequ',0.5,'RF',[],'PV_CF',[],'ZCB_yearFrac',[]);
+couponBond3 = struct('Price',0,'C_rate_pa',0.055,'Maturity',datenum('21/01/2018',formatIn),'FV',8,'C_frequ',0.5,'RF',[],'PV_CF',[],'ZCB_yearFrac',[]);
+couponBond4 = struct('Price',0,'C_rate_pa',0.0525,'Maturity',datenum('15/03/2019 ',formatIn),'FV',10,'C_frequ',0.5,'RF',[],'PV_CF',[],'ZCB_yearFrac',[]);
+couponBond5 = struct('Price',0,'C_rate_pa',0.045,'Maturity',datenum('15/04/2019 ',formatIn),'FV',5,'C_frequ',0.5,'RF',[],'PV_CF',[],'ZCB_yearFrac',[]);   
                  
 couponBond_Portfolio = struct('CouponBonds',[couponBond1 couponBond2 couponBond3 couponBond4 couponBond5],'Price',0,'RF',[],'x',[]);
 numBonds = size(couponBond_Portfolio.CouponBonds,2);
@@ -135,7 +135,7 @@ for i = 1:numBonds
     couponBond_ZCB_yearFrac = [];
     couponBond_Price = 0;
     
-    FV = couponBond_Portfolio.CouponBonds(i).FV_millions;
+    FV = couponBond_Portfolio.CouponBonds(i).FV;
     couponRate = couponBond_Portfolio.CouponBonds(i).C_rate_pa*couponBond_Portfolio.CouponBonds(i).C_frequ;
     
     couponDateYearFrac = yearfrac(valuationDate,couponBond_Portfolio.CouponBonds(i).Maturity,1);
@@ -191,21 +191,58 @@ couponBond_Portfolio_VAR = alpha*sqrt(couponBond_Portfolio.x'*cov(diff(couponBon
 % INR Indian Rupee -50
 % JPY Yen -30
 
-%AUD $ to US $	 AUD $ TO UK £  	 AUD $ TO EURO	AUD $ TO CHF	AUD $ TO INR (Indian Rupee)	AUD $ TO NZD $	AUD $ TO JPY
+%AUD $ to US $	 AUD $ TO UK £  	 AUD $ TO EURO	AUD $ TO CHF	AUD $
+%TO INR (Indian Rupee)	AUD $ TO NZD $	AUD $ TO JPY
 
 currency1 = struct('Price',-40,'exchaRateCode','AUD $ to US $','Currency','USD');
-currency2 = struct('Price',0,'exchaRateCode',0.0425,'Currency',datenum('15/06/2016',formatIn));
-currency3 = struct('Price',0,'exchaRateCode',0.055,'Currency',datenum('15/06/2016',formatIn));
-currency4 = struct('Price',0,'exchaRateCode',0.0525,'Currency',datenum('15/06/2016',formatIn));
-currency5 = struct('Price',0,'exchaRateCode',0.045,'Currency',datenum('15/06/2016',formatIn));  
-                 
-couponBond_Portfolio = struct('CouponBonds',[couponBond1 couponBond2 couponBond3 couponBond4 couponBond5],'Price',0,'RF',[],'x',[]);
+currency2 = struct('Price',60,'exchaRateCode','AUD $ TO EURO','Currency','EUR');
+currency3 = struct('Price',55,'exchaRateCode','AUD $ TO UK £','Currency','GBP');
+currency4 = struct('Price',30,'exchaRateCode','AUD $ TO NZD $','Currency','NZD');
+currency5 = struct('Price',-50,'exchaRateCode','AUD $ TO INR (Indian Rupee)','Currency','INR');
+currency6 = struct('Price',-30,'exchaRateCode','AUD $ TO JPY','Currency','JPY');  
 
+FX_Portfolio = struct('Currencies',[currency1 currency2 currency3 currency4 currency5 currency6],'Price',0);
 
+sizeFxPortfolio = size(FX_Portfolio.Currencies,2);
 
+for i =1:sizeFxPortfolio
+    FX_Portfolio.Price = FX_Portfolio.Price + abs(FX_Portfolio.Currencies(i).Price);
+end
 
+%%
+% Portfolio 4
+% shares and share options
+% XJO	BHP	CBA	ANZ	RIO	NCM	WPL	TLS
+% bought is positive value
+% sold is negative value
 
+share1 = struct('Price',0,'IssuerCode','CBA','OwnOrSold',-1,'numShares',60000);
+share2 = struct('Price',0,'IssuerCode','ANZ','OwnOrSold',1,'numShares',80000);
+share3 = struct('Price',0,'IssuerCode','RIO','OwnOrSold',1,'numShares',100000);
+share4 = struct('Price',0,'IssuerCode','NCM','OwnOrSold',-1,'numShares',200000);
+share5 = struct('Price',0,'IssuerCode','WPL','OwnOrSold',1,'numShares',150000);
+share6 = struct('Price',0,'IssuerCode','TLS','OwnOrSold',-1,'numShares',250000); 
 
+PhysicalShares_Portfolio = struct('Share',[share1 share2 share3 share4 share5 share6],'Price',0);
+numSharesPositions = size(PhysicalShares_Portfolio.Share,2);
+[spotArray,issuerCodes] = returnRowData('stock prices',workbookSheetNames,workbookDates,workbookCodes,workbookNumericData,valuationDate);
+
+for i = 1:numSharesPositions
+    spot = spotArray(find(strcmp(PhysicalShares_Portfolio.Share(i).IssuerCode,issuerCodes)));
+    boughtOrSold = PhysicalShares_Portfolio.Share(i).OwnOrSold;
+    PhysicalShares_Portfolio.Share(i).Price = boughtOrSold*PhysicalShares_Portfolio.Share(i).numShares*spot/1000000;
+    PhysicalShares_Portfolio.Price = PhysicalShares_Portfolio.Price + PhysicalShares_Portfolio.Share(i).Price;
+end
+
+option1 = struct('Price',0,'Maturity',datenum('9/10/2015',formatIn),'UnderlyingCode','BHP','CallOrPut',1,'OwnOrSold',1,'numShares',250000,'strike',28.00,'stdev_pa',0.2953);
+option2 = struct('Price',0,'Maturity',datenum('8/01/2016',formatIn),'UnderlyingCode','RIO','CallOrPut',-1,'OwnOrSold',1,'numShares',200000,'strike',54.00,'stdev_pa',0.2606);
+option3 = struct('Price',0,'Maturity',datenum('15/06/2016',formatIn),'UnderlyingCode','CBA','CallOrPut',-1,'OwnOrSold',1,'numShares',250000,'strike',53.00,'stdev_pa',0.2648);
+option4 = struct('Price',0,'Maturity',datenum('15/06/2016',formatIn),'UnderlyingCode','CBA','CallOrPut',-1,'OwnOrSold',1,'numShares',250000,'strike',28,'stdev_pa',0.4418);
+option5 = struct('Price',0,'Maturity',datenum('15/06/2016',formatIn),'UnderlyingCode','CBA','CallOrPut',-1,'OwnOrSold',1,'numShares',250000,'strike',28,'stdev_pa',0.44);
+option6 = struct('Price',0,'Maturity',datenum('15/06/2016',formatIn),'UnderlyingCode','CBA','CallOrPut',-1,'OwnOrSold',1,'numShares',250000,'strike',28,'stdev_pa',0.2522);
+
+ShareOptions_Portfolio = struct('ShareOption',[option1 option2 option3 option4 option5 option6],'Price',0);
+numSharesOptPositions = size(ShareOptions_Portfolio.ShareOption,2);
 
 end
 
