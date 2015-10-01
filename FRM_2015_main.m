@@ -16,6 +16,14 @@
 % matrix (if not, how many years back from valuation date?)
 
 %%
+% portfolio 2 - fx portfolio
+% how do we treat short position? just abs of value?
+
+%% Swaps valution
+% do we have to include accural value? 
+% do we assume the fixed and floating leg have the same payment frequency?
+% cont compounding ok? to determine forward rate over some T1 and T2 
+
 function [] = FRM_2015_main()
          
 close all;
@@ -111,6 +119,8 @@ end
 % Com G 5.25% 15-Mar-2019 15-Sep-2015 10
 % Com G 4.50% 15-Apr-2020 15-Oct-2015 5
 
+%might help in future to write the C_frequ using yearfrac function
+%dependent upon day count basis used
 couponBond1 = struct('Price',0,'C_rate_pa',0.0475,'Maturity',datenum('15/06/2016',formatIn),'FV',10,'C_frequ',0.5,'RF',[],'PV_CF',[],'ZCB_yearFrac',[]);
 couponBond2 = struct('Price',0,'C_rate_pa',0.0425,'Maturity',datenum('21/07/2017 ',formatIn),'FV',5,'C_frequ',0.5,'RF',[],'PV_CF',[],'ZCB_yearFrac',[]);
 couponBond3 = struct('Price',0,'C_rate_pa',0.055,'Maturity',datenum('21/01/2018',formatIn),'FV',8,'C_frequ',0.5,'RF',[],'PV_CF',[],'ZCB_yearFrac',[]);
@@ -140,8 +150,8 @@ for i = 1:numBonds
     
     couponDateYearFrac = yearfrac(valuationDate,couponBond_Portfolio.CouponBonds(i).Maturity,1);
     maturityPayment = 1;
-    while(couponDateYearFrac > 0)        
-        ZCB = ZCB_price_One(couponDateYearFrac,interpolYield(couponDateYearFrac,valuDateYearFracs,valuDateYields));
+    while(couponDateYearFrac >= couponBond_Portfolio.CouponBonds(i).C_frequ)        
+        ZCB = ZCB_price_contComp(couponDateYearFrac,interpolYield(couponDateYearFrac,valuDateYearFracs,valuDateYields));
         if(maturityPayment)
             PV_CF = (1+couponRate)*FV*ZCB;
             maturityPayment = 0;
@@ -150,7 +160,7 @@ for i = 1:numBonds
         end
 
         numRF = numRF + 1;
-        couponBond_Portfolio.RF(:,numRF) = ZCB_riskFactor(couponDateYearFrac,valuDateYearFracs,codes,workbookSheetNames,workbookDates,workbookCodes,workbookNumericData);
+        couponBond_Portfolio.RF(:,numRF) = ZCB_yieldCurveRiskFactor(couponDateYearFrac,valuDateYearFracs,codes,workbookSheetNames,workbookDates,workbookCodes,workbookNumericData);
         couponBond_RF = [couponBond_RF, couponBond_Portfolio.RF(:,numRF)];
         couponBond_Portfolio.x(numRF,:) = PV_CF*couponDateYearFrac;
         couponBond_PV_CF = [couponBond_PV_CF,PV_CF];
@@ -161,7 +171,6 @@ for i = 1:numBonds
     end
     
     %work out accural interest since last coupon date
-    couponDateYearFrac = couponDateYearFrac + couponBond_Portfolio.CouponBonds(i).C_frequ;
     couponBond_Price = couponBond_Price + couponRate*FV*couponDateYearFrac/couponBond_Portfolio.CouponBonds(i).C_frequ;  
     couponBond_Portfolio.CouponBonds(i).Price = couponBond_Price;
     
@@ -173,11 +182,12 @@ for i = 1:numBonds
 end
 
 CI = 0.99;
-alpha = norminv(CI)
-couponBond_Portfolio.Price
-couponBond_Portfolio_VAR = alpha*sqrt(couponBond_Portfolio.x'*cov(diff(couponBond_Portfolio.RF,1,1))*couponBond_Portfolio.x)
+alpha = norminv(CI);
+couponBond_Portfolio.Price;
+couponBond_Portfolio_VAR = alpha*sqrt(couponBond_Portfolio.x'*cov(diff(couponBond_Portfolio.RF,1,1))*couponBond_Portfolio.x);
 
 %%
+% Portfolio 3
 % Spot Foreign Exchange
 % Currency Currency
 % Description
@@ -209,6 +219,8 @@ for i =1:sizeFxPortfolio
     FX_Portfolio.Price = FX_Portfolio.Price + abs(FX_Portfolio.Currencies(i).Price);
 end
 
+FX_Portfolio.Price;
+
 %%
 % Portfolio 4
 % shares and share options
@@ -229,10 +241,13 @@ numSharesPositions = size(PhysicalShares_Portfolio.Share,2);
 
 for i = 1:numSharesPositions
     spot = spotArray(find(strcmp(PhysicalShares_Portfolio.Share(i).IssuerCode,issuerCodes)));
-    boughtOrSold = PhysicalShares_Portfolio.Share(i).OwnOrSold;
-    PhysicalShares_Portfolio.Share(i).Price = boughtOrSold*PhysicalShares_Portfolio.Share(i).numShares*spot/1000000;
+    OwnOrSold = PhysicalShares_Portfolio.Share(i).OwnOrSold;
+    PhysicalShares_Portfolio.Share(i).Price = OwnOrSold*PhysicalShares_Portfolio.Share(i).numShares*spot/1000000; %price in millions AUD
     PhysicalShares_Portfolio.Price = PhysicalShares_Portfolio.Price + PhysicalShares_Portfolio.Share(i).Price;
 end
+
+% in millions 
+PhysicalShares_Portfolio.Price;
 
 option1 = struct('Price',0,'Maturity',datenum('9/10/2015',formatIn),'UnderlyingCode','BHP','CallOrPut',1,'OwnOrSold',1,'numShares',250000,'strike',28.00,'vol_pa',0.2953);
 option2 = struct('Price',0,'Maturity',datenum('8/01/2016',formatIn),'UnderlyingCode','RIO','CallOrPut',-1,'OwnOrSold',1,'numShares',200000,'strike',54.00,'vol_pa',0.2606);
@@ -243,12 +258,98 @@ option6 = struct('Price',0,'Maturity',datenum('09/06/2016',formatIn),'Underlying
 
 ShareOptions_Portfolio = struct('ShareOption',[option1 option2 option3 option4 option5 option6],'Price',0);
 numSharesOptPositions = size(ShareOptions_Portfolio.ShareOption,2);
+
+[spotArray,underlyingCodes] = returnRowData('stock prices',workbookSheetNames,workbookDates,workbookCodes,workbookNumericData,valuationDate);
+[valuDateYearFracs, codes, valuDateYields] = returnYieldCurveData('AUSTRALIA_ZERO_CURVE',workbookSheetNames,workbookDates,workbookCodes,workbookNumericData,valuationDate);
+
 for i = 1:numSharesOptPositions
+    spot = spotArray(find(strcmp(ShareOptions_Portfolio.ShareOption(i).UnderlyingCode,underlyingCodes)));
     
+    OwnOrSold = ShareOptions_Portfolio.ShareOption(i).OwnOrSold;
+    numShares = ShareOptions_Portfolio.ShareOption(i).numShares;
+    strike = ShareOptions_Portfolio.ShareOption(i).strike;
+    div = 0;
+    vol = ShareOptions_Portfolio.ShareOption(i).vol_pa;
+    expiry = yearfrac(valuationDate,ShareOptions_Portfolio.ShareOption(i).Maturity,1);
+    callOrPut = ShareOptions_Portfolio.ShareOption(i).CallOrPut;
+    rate = interpolYield(expiry,valuDateYearFracs,valuDateYields);
+    
+    ShareOptions_Portfolio.ShareOption(i).Price = OwnOrSold*numShares*bsPrice(spot, strike, rate, div, vol, expiry, callOrPut)/1000000;
+    ShareOptions_Portfolio.Price = ShareOptions_Portfolio.Price + ShareOptions_Portfolio.ShareOption(i).Price;
+end
+
+% in millions 
+ShareOptions_Portfolio.Price;
+
+%%
+% Portfolio 5
+% interest rate swaps
+% Maturity
+% Notional
+% Amount
+% (AUD
+% Million)
+% Payer
+% /Receiver
+% Swap
+% Rate
+% (p.a.)
+% Settlement
+% 07-Nov-2015 $20 Receiver 2.20% Quarterly
+% 07-Aug-2016 $80 Payer 2.30% Semi-annual
+% 06-Nov-2016 $70 Receiver 2.45% Quarterly
+
+%might help in future to write the sett_frequ using yearfrac function
+%dependent upon day count basis used
+swap1 = struct('Price',0,'PayerOrRec',1,'Maturity',datenum('07/11/2015',formatIn),'Notional',20,'Sett_period',0.25,'SwapRate_pa',0.022);
+swap2 = struct('Price',0,'PayerOrRec',-1,'Maturity',datenum('07/08/2016',formatIn),'Notional',80,'Sett_period',0.5,'SwapRate_pa',0.023);
+swap3 = struct('Price',0,'PayerOrRec',1,'Maturity',datenum('06/11/2016',formatIn),'Notional',70,'Sett_period',0.25,'SwapRate_pa',0.0245);
+        
+swap_Portfolio = struct('Swap',[swap1 swap2 swap3],'Price',0);
+numSwaps = size(swap_Portfolio.Swap,2);
+%% NOTE: VALUATION DATE IS INCORRECT BECAUSE DATA HAD ZERO RATES 
+% SUBTRACTED ONE FROM VALUATION DATE TO TEST METHOD
+%%[valuDateIRSYearFracs, IRScodes, valuDateIRSYields] = returnIRSCurveData('Interest Rate Swap Data',workbookSheetNames,workbookDates,workbookCodes,workbookNumericData,valuationDate);
+[valuDateIRSYearFracs, IRScodes, valuDateIRSYields] = returnIRSCurveData('Interest Rate Swap Data',workbookSheetNames,workbookDates,workbookCodes,workbookNumericData,valuationDate-1);
+
+for i = 1:numSwaps
+
+    swap_Price = 0;
+    Notional = swap_Portfolio.Swap(i).Notional;
+    
+    swapYearFrac = yearfrac(valuationDate,swap_Portfolio.Swap(i).Maturity,1);
+    while(swapYearFrac >= swap_Portfolio.Swap(i).Sett_period)        
+        ZCB = ZCB_price_contComp(swapYearFrac,interpolYield(swapYearFrac,valuDateIRSYearFracs,valuDateIRSYields));
+        PV_fixedLeg = Notional*swap_Portfolio.Swap(i).Sett_period*swap_Portfolio.Swap(i).SwapRate_pa*ZCB;
+        
+        T2 = swapYearFrac;
+        T1 = T2 - swap_Portfolio.Swap(i).Sett_period;
+        yieldT2 = interpolYield(T2,valuDateYearFracs,valuDateYields);
+        yieldT1 = interpolYield(T1,valuDateYearFracs,valuDateYields);
+        PV_floatingLeg = Notional*swap_Portfolio.Swap(i).Sett_period*ForwardRate_contComp(T1,yieldT1,T2,yieldT2)*ZCB;
+        
+        swapYearFrac = swapYearFrac - swap_Portfolio.Swap(i).Sett_period;
+        swap_Price = swap_Price + swap_Portfolio.Swap(i).PayerOrRec*(PV_fixedLeg - PV_floatingLeg);
+    end
+    
+    %work out accural interest since last coupon date
+    swap_Price = swap_Price + swapYearFrac*swap_Portfolio.Swap(i).PayerOrRec*(PV_fixedLeg - PV_floatingLeg)/swap_Portfolio.Swap(i).Sett_period;    
+    swap_Portfolio.Swap(i).Price = swap_Price;
+
+    swap_Portfolio.Price = swap_Portfolio.Price + swap_Portfolio.Swap(i).Price;
+end
+
 end
 
 
-end
+
+
+
+
+
+
+
+
 
 function [colNumeric, varargout] = returnColData(sheetName,codeString,sheetNames,workbookDates,workbookCodes,workbookNumericData)
     sheetIndex = strcmp(sheetNames',sheetName);
@@ -278,12 +379,12 @@ function [varargout] = returnYieldCurveData(sheetName,sheetNames,workbookDates,w
     if(nargout > 0)
           % using 30/360 convention
           RELDATE00Y00 = valuationDate;
-          RELDATE00Y01 = daysadd(valuationDate,30,1);
+          RELDATE00Y01 = daysadd(valuationDate,1*30,1);
           RELDATE00Y02 = daysadd(valuationDate,2*30,1);
           RELDATE00Y03 = daysadd(valuationDate,3*30,1);
           RELDATE00Y06 = daysadd(valuationDate,6*30,1);
           RELDATE00Y09 = daysadd(valuationDate,9*30,1);
-          RELDATE01Y00 = daysadd(valuationDate,12*30,1);
+          RELDATE01Y00 = daysadd(valuationDate,1*360,1);
           RELDATE02Y00 = daysadd(valuationDate,2*360,1);
           RELDATE03Y00 = daysadd(valuationDate,3*360,1);
           RELDATE04Y00 = daysadd(valuationDate,4*360,1);
@@ -311,8 +412,45 @@ function [varargout] = returnYieldCurveData(sheetName,sheetNames,workbookDates,w
     end
 end
 
-function price = ZCB_price_One(maturityYears,yield)
+function [varargout] = returnIRSCurveData(sheetName,sheetNames,workbookDates,workbookCodes,workbookNumericData,valuationDate)
+    if(nargout > 0)
+          % using 30/360 convention
+          RELDATE00Y01 = daysadd(valuationDate,1*30,1);
+          RELDATE00Y02 = daysadd(valuationDate,2*30,1);
+          RELDATE00Y03 = daysadd(valuationDate,3*30,1);
+          RELDATE00Y04 = daysadd(valuationDate,4*30,1);
+          RELDATE00Y05 = daysadd(valuationDate,5*30,1);
+          RELDATE00Y06 = daysadd(valuationDate,6*30,1);
+          RELDATE01Y00 = daysadd(valuationDate,1*360,1);
+          RELDATE02Y00 = daysadd(valuationDate,2*360,1);
+          RELDATE03Y00 = daysadd(valuationDate,3*360,1);
+          
+          varargout{1} = yearfrac(valuationDate,[RELDATE00Y01 RELDATE00Y02 RELDATE00Y03	RELDATE00Y04    RELDATE00Y05    RELDATE00Y06...
+                                                RELDATE01Y00	RELDATE02Y00 RELDATE03Y00],1);
+          
+          sheetIndex = strcmp(sheetNames',sheetName);
+          
+          if(nargout > 1)
+            varargout{2} = workbookCodes{sheetIndex};
+          
+            if(nargout > 2)
+                sheetNumericData = workbookNumericData{sheetIndex};
+                rowIndex = find(workbookDates{sheetIndex}== valuationDate);
+                varargout{3} = sheetNumericData(rowIndex,:);
+            end
+          end
+    
+    end
+end
+
+function price = ZCB_price_contComp(maturityYears,yield)
+%using cont compounding..what about simple? 
 price = exp(-maturityYears*yield);
+end
+
+function forwardRateT1_T2 = ForwardRate_contComp(T1,yieldT1,T2,yieldT2)
+%using cont compounding..what about simple? 
+forwardRateT1_T2 = -(log(ZCB_price_contComp(T2,yieldT2))-log(ZCB_price_contComp(T1,yieldT1)))/(T2-T1);
 end
 
 function intepYield = interpolYield(yearFrac,setYearFracs,setYields)
@@ -320,7 +458,7 @@ minDateLoc = min(find(yearFrac < setYearFracs))-1; %#ok<MXFND>
 intepYield = setYields(minDateLoc) + (yearFrac - setYearFracs(minDateLoc)).*(setYields(minDateLoc + 1) - setYields(minDateLoc))./(setYearFracs(minDateLoc + 1) - setYearFracs(minDateLoc));
 end
 
-function RF_yield = ZCB_riskFactor(yearFrac,setYearFracs,codes,workbookSheetNames,workbookDates,workbookCodes,workbookNumericData)
+function RF_yield = ZCB_yieldCurveRiskFactor(yearFrac,setYearFracs,codes,workbookSheetNames,workbookDates,workbookCodes,workbookNumericData)
 minDateLoc = min(find(yearFrac < setYearFracs))-1;
 minYield = returnColData('AUSTRALIA_ZERO_CURVE',codes{minDateLoc},workbookSheetNames,workbookDates,workbookCodes,workbookNumericData);
 maxYield = returnColData('AUSTRALIA_ZERO_CURVE',codes{minDateLoc + 1},workbookSheetNames,workbookDates,workbookCodes,workbookNumericData);
