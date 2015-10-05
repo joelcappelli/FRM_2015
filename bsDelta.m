@@ -1,19 +1,19 @@
-function d = bsCallDelta(spot, strike, rate, div, vol, expiry)
-% BSCALLDELTA: Black-Scholes delta of a European call option
+function d = bsDelta(spot, strike, rate, div, vol, expiry, callOrPut)
+% BSCALLDELTA: Black-Scholes delta of a European option
 %
 % usage: 
-%           d = bsCallDelta( S, K, r, q, vol, T )
+%           d = bsCDelta( S, K, r, q, vol, T , callOrPut)
 %
 % input:
 %           S:      spot price of the underlying asset, S>0
-%           K:      strike of the call option, K>0
+%           K:      strike of the option, K>0
 %           r:      risk-free interest rate
 %           q:      underlying asset's continuous dividend yield
 %           vol:    asset's volatility
 %           T:      time until the option's expiry date
-%
+%           callOrPut: call or put indicator; 1 or -1 respectively
 % output:
-%           d:      the call's delta
+%           d:      the bs delta
 %
 % Jeff Dewynne, January 2008
 %
@@ -27,6 +27,6 @@ function d = bsCallDelta(spot, strike, rate, div, vol, expiry)
     
     d1 = ( tmp1 + tmp2 + tmp3/2 ) ./ sqrt(tmp3);
     
-    d =  exp(  -div .* expiry ) .* NC( d1 ) ;
+    d =  callOrPut.*exp(  -div .* expiry ) .* NC( callOrPut.*d1 ) ;
 
 end

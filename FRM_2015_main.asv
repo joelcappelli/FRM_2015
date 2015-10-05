@@ -3,42 +3,33 @@
 % Joel Cappelli
 % 12137384
 
-% questions to ask;
-% MTM valuation
-
-%% bond portfolio
-% do we take all the yields in the data set for the diff and build covar
-% matrix (if not, how many years back from valuation date?) - 4 years? 1000
-% days
-
-%% Swaps valution
-% do we have to include accural value? yes
-% do we assume the fixed and floating leg have the same payment frequency?
-% cont compounding ok? to determine forward rate over some T1 and T2 
-
 function [] = FRM_2015_main()
          
 close all;
 clear all;
 clc;
 
-%date to time format
-formatIn = 'dd/mm/yyyy';
-valuationDate_dateFormat = '7/08/2015';
-valuationDate = datenum(valuationDate_dateFormat,formatIn);
-
+workbookSheetNames = {};
+workbookDates = {};
+workbookCodes = {};
+workbookNumericData = {};
+    
 loadData = 1;
 
-if(loadData)
-    workbookSheetNames = {};
-    workbookDates = {};
-    workbookCodes = {};
-    workbookNumericData = {};
-    load('workbookSheetNames.mat');    
-    load('workbookDates.mat');
-    load('workbookCodes.mat');
-    load('workbookNumericData.mat');
+if(loadData)   
+    load('dateFormatIn.mat','dateFormatIn');
+    load('valuationDate.mat','valuationDate');
+    load('workbookSheetNames.mat','workbookSheetNames');
+    load('workbookDates.mat','workbookDates');
+    load('workbookCodes.mat','workbookCodes');
+    load('workbookNumericData.mat','workbookNumericData');   
 else
+    %date to time format
+    dateFormatIn = 'dd/mm/yyyy';
+    valuationDate_dateFormat = '7/08/2015';
+    valuationDate = datenum(valuationDate_dateFormat,dateFormatIn);
+    save('valuationDate.mat','valuationDate');
+    
     fileName = '2015_FRM_ASSIGNMENT_DATA_updated.xlsx';     
     workbookSheetNames = {'stock prices';...
                           'exchange_rates';...
@@ -59,45 +50,17 @@ else
                                2;...
                                1;...
                                3];
-                       
-    numSheets = size(workbookSheetNames,1);
-    %create cell array containing 
-    %there is always the same number of data row entries per sheet but 
-    workbookCodes = cell(1,numSheets);
-    workbookNumericData = cell(1,numSheets);
-    workbookDates = cell(1,numSheets);
-
-    %%
-    % open excel spreadsheet and read in data
-    disp('Reading excel data...');
-    for i = 1:numSheets
-        [NUMERIC,TXT]=xlsread(fileName,workbookSheetNames{i});
-
-        temp_sheetDates = datenum(TXT((firstRowOfCodesPerSheet(i)+1):end,1),formatIn);
-        temp_sheetCodes = TXT(firstRowOfCodesPerSheet(i),2:end);
-
-        workbookDates{i} = temp_sheetDates;
-        workbookCodes{i} = temp_sheetCodes;
-        workbookNumericData{i} = NUMERIC;
-    end
-    disp('Finished importing excel data...');
-    disp('Saving data...');
-    save('workbookSheetNames.mat','workbookSheetNames');
-    save('workbookDates.mat','workbookDates');
-    save('workbookCodes.mat','workbookCodes');
-    save('workbookNumericData.mat','workbookNumericData');
+                           
+    readExcelSpreadsheet_SaveInputs(fileName,workbookSheetNames,firstRowOfCodesPerSheet,dateFormatIn);
+    
+    load('dateFormatIn.mat','dateFormatIn');
+    load('valuationDate.mat','valuationDate');
+    load('workbookSheetNames.mat','workbookSheetNames');
+    load('workbookDates.mat','workbookDates');
+    load('workbookCodes.mat','workbookCodes');
+    load('workbookNumericData.mat','workbookNumericData');   
 end
-
-%% test to grab some data
-[BBSR5M,dates] = returnColData('Interest Rate Swap Data','BBSR5M',workbookSheetNames,workbookDates,workbookCodes,workbookNumericData);
-[BBSR5M_check] = returnColData('Interest Rate Swap Data','BBSR5M',workbookSheetNames,workbookDates,workbookCodes,workbookNumericData);
-
-[AUD_INR,dates] = returnColData('exchange_rates','AUD $ TO INR (Indian Rupee)',workbookSheetNames,workbookDates,workbookCodes,workbookNumericData);
-[AUD_INR_check] = returnColData('exchange_rates','AUD $ TO INR (Indian Rupee)',workbookSheetNames,workbookDates,workbookCodes,workbookNumericData);
-
-[yields,yearCodes] = returnRowData('AUSTRALIA_ZERO_CURVE',workbookSheetNames,workbookDates,workbookCodes,workbookNumericData,valuationDate);
-[exRate,exRCodes] = returnRowData('exchange_rates',workbookSheetNames,workbookDates,workbookCodes,workbookNumericData,valuationDate);
-
+    
 %%
 % Portfolio 1
 % Physical Bonds
@@ -115,73 +78,40 @@ end
 
 %might help in future to write the C_frequ using yearfrac function
 %dependent upon day count basis used
-couponBond1 = struct('Price',0,'C_rate_pa',0.0475,'Maturity',datenum('15/06/2016',formatIn),'FV',10,'C_frequ',0.5,'RF',[],'PV_CF',[],'ZCB_yearFrac',[]);
-couponBond2 = struct('Price',0,'C_rate_pa',0.0425,'Maturity',datenum('21/07/2017 ',formatIn),'FV',5,'C_frequ',0.5,'RF',[],'PV_CF',[],'ZCB_yearFrac',[]);
-couponBond3 = struct('Price',0,'C_rate_pa',0.055,'Maturity',datenum('21/01/2018',formatIn),'FV',8,'C_frequ',0.5,'RF',[],'PV_CF',[],'ZCB_yearFrac',[]);
-couponBond4 = struct('Price',0,'C_rate_pa',0.0525,'Maturity',datenum('15/03/2019 ',formatIn),'FV',10,'C_frequ',0.5,'RF',[],'PV_CF',[],'ZCB_yearFrac',[]);
-couponBond5 = struct('Price',0,'C_rate_pa',0.045,'Maturity',datenum('15/04/2019 ',formatIn),'FV',5,'C_frequ',0.5,'RF',[],'PV_CF',[],'ZCB_yearFrac',[]);   
-                 
-couponBond_Portfolio = struct('CouponBonds',[couponBond1 couponBond2 couponBond3 couponBond4 couponBond5],'Price',0,'RF',[],'x',[]);
-numBonds = size(couponBond_Portfolio.CouponBonds,2);
+couponBond1 = struct('Price',0,'C_rate_pa',0.0475,'Maturity',datenum('15/06/2016',dateFormatIn),'FV',10,'C_frequ',0.5);
+couponBond2 = struct('Price',0,'C_rate_pa',0.0425,'Maturity',datenum('21/07/2017 ',dateFormatIn),'FV',5,'C_frequ',0.5);
+couponBond3 = struct('Price',0,'C_rate_pa',0.055,'Maturity',datenum('21/01/2018',dateFormatIn),'FV',8,'C_frequ',0.5);
+couponBond4 = struct('Price',0,'C_rate_pa',0.0525,'Maturity',datenum('15/03/2019 ',dateFormatIn),'FV',10,'C_frequ',0.5);
+couponBond5 = struct('Price',0,'C_rate_pa',0.045,'Maturity',datenum('15/04/2019 ',dateFormatIn),'FV',5,'C_frequ',0.5);  
 
-[valuDateYearFracs, codes, valuDateYields] = returnYieldCurveData('AUSTRALIA_ZERO_CURVE',workbookSheetNames,workbookDates,workbookCodes,workbookNumericData,valuationDate);
+%assume same yield curve risk factors for all coupon bonds 
+% can price and compute VAR separately for portfolio of bonds per yield
+% curve
+couponBond_Portfolio = struct('CouponBond',[couponBond1 couponBond2 couponBond3 couponBond4 couponBond5],'Price',0,'yieldCurveSheet','AUSTRALIA_ZERO_CURVE','RF',[],'PV_CF',[],'ZCB_yearFrac',[]);
+couponBond_Portfolio = decomposeBondPortfolio(couponBond_Portfolio,valuationDate,workbookSheetNames,workbookDates,workbookCodes,workbookNumericData);
 
-%growing column vectors of risk factors which are the coupon bonds
-%decomposed into ZCB with assoicated linearly interpolated yield data for
-%each cash flow 
-numRF = 0;
-% make sure each risk factor is column vector to be used with covar matlab
-% method
-for i = 1:numBonds
-
-    couponBond_RF = [];
-    couponBond_PV_CF = [];
-    couponBond_ZCB_yearFrac = [];
-    couponBond_Price = 0;
+fprintf('Portfolio 1: Bond portfolio \n\n');
+fprintf('Valuation date: %s\n',datestr(valuationDate,dateFormatIn));
+for i = 1:size(couponBond_Portfolio.CouponBond,2)
+    fprintf('Value of bond %d: $%f  million AUD\n', i,couponBond_Portfolio.CouponBond(i).Price);
+end
+fprintf('Total value of bond portfolio: $%f  million AUD\n\n', couponBond_Portfolio.Price);
     
-    FV = couponBond_Portfolio.CouponBonds(i).FV;
-    couponRate = couponBond_Portfolio.CouponBonds(i).C_rate_pa*couponBond_Portfolio.CouponBonds(i).C_frequ;
-    
-    couponDateYearFrac = yearfrac(valuationDate,couponBond_Portfolio.CouponBonds(i).Maturity,1);
-    maturityPayment = 1;
-    %while(couponDateYearFrac >= couponBond_Portfolio.CouponBonds(i).C_frequ)  
-    while(couponDateYearFrac > 0) 
-        ZCB = ZCB_price_contComp(couponDateYearFrac,interpolYield(couponDateYearFrac,valuDateYearFracs,valuDateYields));
-        if(maturityPayment)
-            PV_CF = (1+couponRate)*FV*ZCB;
-            maturityPayment = 0;
-        else
-            PV_CF = couponRate*FV*ZCB;
-        end
+CI = [0.95,0.99];
+holdingTdays = [1,10];
 
-        numRF = numRF + 1;
-        couponBond_Portfolio.RF(:,numRF) = ZCB_yieldCurveRiskFactor(couponDateYearFrac,valuDateYearFracs,codes,workbookSheetNames,workbookDates,workbookCodes,workbookNumericData);
-        couponBond_RF = [couponBond_RF, couponBond_Portfolio.RF(:,numRF)];
-        couponBond_Portfolio.x(numRF,:) = PV_CF*couponDateYearFrac;
-        couponBond_PV_CF = [couponBond_PV_CF,PV_CF];
-        couponBond_ZCB_yearFrac = [couponBond_ZCB_yearFrac,couponDateYearFrac];
+for i = 1:size(CI,2)
+    for j = 1:size(holdingTdays,2)
+        couponBond_Portfolio_deltaNormAnalyVAR = BondPortfolio_deltaNormAnalyVAR(CI(i),holdingTdays(j),couponBond_Portfolio,valuationDate,workbookSheetNames,workbookDates);
+        couponBond_Portfolio_deltaGammaHistSimVaR = BondPortfolio_deltaGammaHistSimVaR(CI(i),holdingTdays(j),couponBond_Portfolio,valuationDate,workbookSheetNames,workbookDates);
         
-        couponDateYearFrac = couponDateYearFrac - couponBond_Portfolio.CouponBonds(i).C_frequ;
-        couponBond_Price = couponBond_Price + PV_CF;
+        fprintf('VAR with CI: %.2f%% and holding period of %d days\n', 100*CI(i),holdingTdays(j));
+        fprintf('deltaNormAnalyVAR of bond portfolio $%f  million AUD\n', couponBond_Portfolio_deltaNormAnalyVAR);
+        fprintf('deltaGammaHistSimVaR of bond portfolio $%f  million AUD\n\n', couponBond_Portfolio_deltaGammaHistSimVaR);
     end
-    
-    %work out accural interest since last coupon date
-    %couponBond_Price = couponBond_Price + couponRate*FV*couponDateYearFrac/couponBond_Portfolio.CouponBonds(i).C_frequ;  
-    couponBond_Portfolio.CouponBonds(i).Price = couponBond_Price;
-    
-    couponBond_Portfolio.CouponBonds(i).RF = couponBond_RF;
-    couponBond_Portfolio.CouponBonds(i).PV_CF = couponBond_PV_CF;
-    couponBond_Portfolio.CouponBonds(i).ZCB_yearFrac = couponBond_ZCB_yearFrac;
-    
-    couponBond_Portfolio.Price = couponBond_Portfolio.Price + couponBond_Price;
 end
 
-CI = 0.99;
-alpha = norminv(CI);
-couponBond_Portfolio.Price;
-valDateIndex = find(returnDates('AUSTRALIA_ZERO_CURVE',workbookSheetNames,workbookDates) == valuationDate);
-couponBond_PortfolioRF_last1000days = couponBond_Portfolio.RF((valDateIndex-999):valDateIndex,:);
-couponBond_Portfolio_VAR = alpha*sqrt(couponBond_Portfolio.x'*cov(diff(couponBond_PortfolioRF_last1000days,1,1))*couponBond_Portfolio.x);
+fprintf('#################################################################################################\n\n');
 
 %%
 % Portfolio 2
@@ -201,22 +131,38 @@ couponBond_Portfolio_VAR = alpha*sqrt(couponBond_Portfolio.x'*cov(diff(couponBon
 %AUD $ to US $	 AUD $ TO UK £  	 AUD $ TO EURO	AUD $ TO CHF	AUD $
 %TO INR (Indian Rupee)	AUD $ TO NZD $	AUD $ TO JPY
 
-currency1 = struct('Price',-40,'exchaRateCode','AUD $ to US $','Currency','USD');
-currency2 = struct('Price',60,'exchaRateCode','AUD $ TO EURO','Currency','EUR');
-currency3 = struct('Price',55,'exchaRateCode','AUD $ TO UK £','Currency','GBP');
-currency4 = struct('Price',30,'exchaRateCode','AUD $ TO NZD $','Currency','NZD');
-currency5 = struct('Price',-50,'exchaRateCode','AUD $ TO INR (Indian Rupee)','Currency','INR');
-currency6 = struct('Price',-30,'exchaRateCode','AUD $ TO JPY','Currency','JPY');  
+currency1 = struct('DomesticEquivAmount',-40,'exchaRateCode','AUD $ to US $','Currency','USD');
+currency2 = struct('DomesticEquivAmount',60,'exchaRateCode',' AUD $ TO EURO','Currency','EUR');
+currency3 = struct('DomesticEquivAmount',55,'exchaRateCode',' AUD $ TO UK £  ','Currency','GBP');
+currency4 = struct('DomesticEquivAmount',30,'exchaRateCode','AUD $ TO NZD $','Currency','NZD');
+currency5 = struct('DomesticEquivAmount',-50,'exchaRateCode','AUD $ TO INR (Indian Rupee)','Currency','INR');
+currency6 = struct('DomesticEquivAmount',-30,'exchaRateCode','AUD $ TO JPY','Currency','JPY');  
 
-FX_Portfolio = struct('Currencies',[currency1 currency2 currency3 currency4 currency5 currency6],'Price',0);
+FX_Portfolio = struct('Currencies',[currency1 currency2 currency3 currency4 currency5 currency6],'Price',0,'RF',[],'weights',[],'exchaRateSheet','exchange_rates');
+FX_Portfolio = FXPortfolio_Price_GetRF(FX_Portfolio,workbookSheetNames,workbookDates,workbookCodes,workbookNumericData);
 
-sizeFxPortfolio = size(FX_Portfolio.Currencies,2);
+fprintf('Portfolio 2: Spot Foreign Exchange \n\n');
+fprintf('Valuation date: %s\n',datestr(valuationDate,dateFormatIn));
+for i = 1:size(FX_Portfolio.Currencies,2)
+    fprintf('Value of currency position %d: $%f  million AUD\n', i,FX_Portfolio.Currencies(i).DomesticEquivAmount);
+end
+fprintf('Total value of FX portfolio: $%f  million AUD\n\n', FX_Portfolio.Price);
+    
+CI = [0.95,0.99];
+holdingTdays = [1,10];
 
-for i =1:sizeFxPortfolio
-    FX_Portfolio.Price = FX_Portfolio.Price + abs(FX_Portfolio.Currencies(i).Price);
+for i = 1:size(CI,2)
+    for j = 1:size(holdingTdays,2)
+        FX_Portfolio_analyExactVAR = FXPortfolio_analyExactVAR(FX_Portfolio, CI(i), holdingTdays(j),workbookSheetNames,workbookDates,valuationDate);
+        FX_Portfolio_histVAR = FXPortfolio_histExactVAR(FX_Portfolio, CI(i), holdingTdays(j),workbookSheetNames,workbookDates,valuationDate);
+        
+        fprintf('VAR with CI: %.2f%% and holding period of %d days\n', 100*CI(i),holdingTdays(j));
+        fprintf('analyExactVAR of FX portfolio $%f  million AUD\n', FX_Portfolio_analyExactVAR);
+        fprintf('histVAR of FX portfolio $%f  million AUD\n\n', FX_Portfolio_histVAR);
+    end
 end
 
-FX_Portfolio.Price;
+fprintf('#################################################################################################\n\n');
 
 %%
 % Portfolio 3
@@ -240,11 +186,11 @@ FX_Portfolio.Price;
 % bought is positive value
 % sold is negative value
 
-fxoption1 = struct('Price',0,'Exp_Date',datenum('9/10/2015',formatIn),'UnderlyingExchaRateCode','AUD $ to US $','UnderlyingYieldCode','US_ZERO_CURVE','CallOrPut',1,'OwnOrSold',1,'ForeignAmount',150.00,'DomesticAmount',205.68);
-fxoption2 = struct('Price',0,'Exp_Date',datenum('11/12/2015',formatIn),'UnderlyingExchaRateCode','AUD $ to US $','UnderlyingYieldCode','US_ZERO_CURVE','CallOrPut',-1,'OwnOrSold',1,'ForeignAmount',210.00,'DomesticAmount',280.15);
-fxoption3 = struct('Price',0,'Exp_Date',datenum('13/12/2015',formatIn),'UnderlyingExchaRateCode','AUD $ TO CHF','UnderlyingYieldCode','SWISS_ZERO_CURVE','CallOrPut',1,'OwnOrSold',1,'ForeignAmount',100.00,'DomesticAmount',138.12);
-fxoption4 = struct('Price',0,'Exp_Date',datenum('08/02/2016',formatIn),'UnderlyingExchaRateCode',' AUD $ TO EURO','UnderlyingYieldCode','EURO_ZERO_CURVE','CallOrPut',1,'OwnOrSold',-1,'ForeignAmount',180.00,'DomesticAmount',265.53);
-fxoption5 = struct('Price',0,'Exp_Date',datenum('05/04/2016',formatIn),'UnderlyingExchaRateCode',' AUD $ TO EURO','UnderlyingYieldCode','EURO_ZERO_CURVE','CallOrPut',-1,'OwnOrSold',1,'ForeignAmount',220.00,'DomesticAmount',337.99);
+fxoption1 = struct('Price',0,'Exp_Date',datenum('9/10/2015',dateFormatIn),'UnderlyingExchaRateCode','AUD $ to US $','UnderlyingYieldCode','US_ZERO_CURVE','CallOrPut',1,'OwnOrSold',1,'ForeignAmount',150.00,'DomesticAmount',205.68);
+fxoption2 = struct('Price',0,'Exp_Date',datenum('11/12/2015',dateFormatIn),'UnderlyingExchaRateCode','AUD $ to US $','UnderlyingYieldCode','US_ZERO_CURVE','CallOrPut',-1,'OwnOrSold',1,'ForeignAmount',210.00,'DomesticAmount',280.15);
+fxoption3 = struct('Price',0,'Exp_Date',datenum('13/12/2015',dateFormatIn),'UnderlyingExchaRateCode','AUD $ TO CHF','UnderlyingYieldCode','SWISS_ZERO_CURVE','CallOrPut',1,'OwnOrSold',1,'ForeignAmount',100.00,'DomesticAmount',138.12);
+fxoption4 = struct('Price',0,'Exp_Date',datenum('08/02/2016',dateFormatIn),'UnderlyingExchaRateCode',' AUD $ TO EURO','UnderlyingYieldCode','EURO_ZERO_CURVE','CallOrPut',1,'OwnOrSold',-1,'ForeignAmount',180.00,'DomesticAmount',265.53);
+fxoption5 = struct('Price',0,'Exp_Date',datenum('05/04/2016',dateFormatIn),'UnderlyingExchaRateCode',' AUD $ TO EURO','UnderlyingYieldCode','EURO_ZERO_CURVE','CallOrPut',-1,'OwnOrSold',1,'ForeignAmount',220.00,'DomesticAmount',337.99);
 
 FXOptions_Portfolio = struct('FXOption',[fxoption1 fxoption2 fxoption3 fxoption4 fxoption5],'Price',0);
 numFXOptPositions = size(FXOptions_Portfolio.FXOption,2);
@@ -254,14 +200,20 @@ numFXOptPositions = size(FXOptions_Portfolio.FXOption,2);
 for i = 1:numFXOptPositions
     [valuDateYearFracsForeign, codesForeignYields, valuDateForeignYields] = returnYieldCurveData(FXOptions_Portfolio.FXOption(i).UnderlyingYieldCode,workbookSheetNames,workbookDates,workbookCodes,workbookNumericData,valuationDate);
     [ForeignPerDomesticFX_rates,dates] = returnColData('exchange_rates',FXOptions_Portfolio.FXOption(i).UnderlyingExchaRateCode,workbookSheetNames,workbookDates,workbookCodes,workbookNumericData);
-    valDateIndex = find(dates == valuationDate);
     DomesticPerForeignFX_rates = 1./ForeignPerDomesticFX_rates;
+    valDateIndex = find(dates == valuationDate);
     spotDomesticPerForeign = DomesticPerForeignFX_rates(valDateIndex);
     
-    returns = diff(DomesticPerForeignFX_rates((valDateIndex-364):valDateIndex)) ./ DomesticPerForeignFX_rates((valDateIndex-364):(valDateIndex-1));
+    % assuming daily data
+%     returns = diff(DomesticPerForeignFX_rates((valDateIndex-359):valDateIndex)) ./ DomesticPerForeignFX_rates((valDateIndex-359):(valDateIndex-1));
+%     stdv = std(returns);
+%     vol = sqrt(360)*stdv;
+
+    %cont compounded returns
+    returns = log(DomesticPerForeignFX_rates((valDateIndex-360):(valDateIndex-1))./DomesticPerForeignFX_rates((valDateIndex-359):valDateIndex));
     stdv = std(returns);
-    vol = sqrt(365)*stdv;
-        
+    vol = sqrt(360)*stdv;
+    
     OwnOrSold = FXOptions_Portfolio.FXOption(i).OwnOrSold;
     foreignAmount = FXOptions_Portfolio.FXOption(i).ForeignAmount;
     strikeDomesticPerForeign = FXOptions_Portfolio.FXOption(i).DomesticAmount/FXOptions_Portfolio.FXOption(i).ForeignAmount;
@@ -276,7 +228,12 @@ for i = 1:numFXOptPositions
 end
 
 % in millions 
-FXOptions_Portfolio.Price;
+fprintf('Portfolio 3: Foreign Exchange Options & Forward Foreign Exchange Contracts \n\n');
+fprintf('Valuation date: %s\n',datestr(valuationDate,dateFormatIn));
+for i = 1:size(FXOptions_Portfolio.FXOption,2)
+    fprintf('Value of FXOption position %d: $%f  million AUD\n', i,FXOptions_Portfolio.FXOption(i).Price);
+end
+fprintf('Total value of FXOption portfolio: $%f  million AUD\n\n', FXOptions_Portfolio.Price);
 
 %%
 % Portfolio 3
@@ -298,9 +255,9 @@ FXOptions_Portfolio.Price;
 % 08-Dec-2015 USD 50 AUD 66.83 0.7482
 % 15-Jan-2016 EUR 30 AUD 44.67 0.6715
 
-fwdfx1 = struct('Price',0,'Exp_Date',datenum('07/11/2015',formatIn),'BuyYieldCode','JAPAN_ZERO_CURVE','BuyAmount',1500,'SellYieldCode','AUSTRALIA_ZERO_CURVE','SellAmount',16.38,'SellExchaRateCode','AUD $ TO JPY');
-fwdfx2 = struct('Price',0,'Exp_Date',datenum('08/12/2015',formatIn),'BuyYieldCode','US_ZERO_CURVE','BuyAmount',50,'SellYieldCode','AUSTRALIA_ZERO_CURVE','SellAmount',66.83,'SellExchaRateCode','AUD $ to US $');
-fwdfx3 = struct('Price',0,'Exp_Date',datenum('15/01/2016',formatIn),'BuyYieldCode','EURO_ZERO_CURVE','BuyAmount',30,'SellYieldCode','AUSTRALIA_ZERO_CURVE','SellAmount',44.67,'SellExchaRateCode',' AUD $ TO EURO');
+fwdfx1 = struct('Price',0,'Exp_Date',datenum('07/11/2015',dateFormatIn),'BuyYieldCode','JAPAN_ZERO_CURVE','BuyAmount',1500,'SellYieldCode','AUSTRALIA_ZERO_CURVE','SellAmount',16.38,'SellExchaRateCode','AUD $ TO JPY');
+fwdfx2 = struct('Price',0,'Exp_Date',datenum('08/12/2015',dateFormatIn),'BuyYieldCode','US_ZERO_CURVE','BuyAmount',50,'SellYieldCode','AUSTRALIA_ZERO_CURVE','SellAmount',66.83,'SellExchaRateCode','AUD $ to US $');
+fwdfx3 = struct('Price',0,'Exp_Date',datenum('15/01/2016',dateFormatIn),'BuyYieldCode','EURO_ZERO_CURVE','BuyAmount',30,'SellYieldCode','AUSTRALIA_ZERO_CURVE','SellAmount',44.67,'SellExchaRateCode',' AUD $ TO EURO');
 
 FWDFX_Portfolio = struct('FWDFX',[fwdfx1 fwdfx2 fwdfx3],'Price',0);
 numFWDFXPositions = size(FWDFX_Portfolio.FWDFX,2);
@@ -310,8 +267,7 @@ for i = 1:numFWDFXPositions
     [valuDateYearFracsSell, codesSellYields, valuDateSellYields] = returnYieldCurveData(FWDFX_Portfolio.FWDFX(i).SellYieldCode,workbookSheetNames,workbookDates,workbookCodes,workbookNumericData,valuationDate);
     
     [sellFX_rates,dates] = returnColData('exchange_rates',FWDFX_Portfolio.FWDFX(i).SellExchaRateCode,workbookSheetNames,workbookDates,workbookCodes,workbookNumericData);
-    valDateIndex = find(dates == valuationDate);
-    spotSellFX = sellFX_rates(valDateIndex);
+    spotSellFX = sellFX_rates(dates == valuationDate);
     
     sellAmount = FWDFX_Portfolio.FWDFX(i).SellAmount;
     strikeSellFX = FWDFX_Portfolio.FWDFX(i).BuyAmount/FWDFX_Portfolio.FWDFX(i).SellAmount;
@@ -324,8 +280,13 @@ for i = 1:numFWDFXPositions
     FWDFX_Portfolio.Price = FWDFX_Portfolio.Price + FWDFX_Portfolio.FWDFX(i).Price;
 end
 
-% in millions 
-FWDFX_Portfolio.Price;
+for i = 1:size(FWDFX_Portfolio.FWDFX,2)
+    fprintf('Value of FWDFX position %d: $%f  million AUD\n', i,FWDFX_Portfolio.FWDFX(i).Price);
+end
+fprintf('Total value of FWDFX portfolio: $%f  million AUD\n\n', FWDFX_Portfolio.Price);
+
+fprintf('#################################################################################################\n\n');
+
 
 %%
 % Portfolio 4
@@ -341,40 +302,91 @@ share4 = struct('Price',0,'IssuerCode','NCM','OwnOrSold',-1,'numShares',200000);
 share5 = struct('Price',0,'IssuerCode','WPL','OwnOrSold',1,'numShares',150000);
 share6 = struct('Price',0,'IssuerCode','TLS','OwnOrSold',-1,'numShares',250000); 
 
-PhysicalShares_Portfolio = struct('Share',[share1 share2 share3 share4 share5 share6],'Price',0);
+PhysicalShares_Portfolio = struct('Share',[share1 share2 share3 share4 share5 share6],'Price',0,'RF',[],'weights',[],'pricesSheet','stock prices');
 numSharesPositions = size(PhysicalShares_Portfolio.Share,2);
-[spotArray,issuerCodes] = returnRowData('stock prices',workbookSheetNames,workbookDates,workbookCodes,workbookNumericData,valuationDate);
-
+PhysicalShares_Portfolio.weights = zeros(1,numSharesPositions);
+numRF = 0;
 for i = 1:numSharesPositions
-    spot = spotArray(find(strcmp(PhysicalShares_Portfolio.Share(i).IssuerCode,issuerCodes)));
+    [stockPrices,dates] = returnColData(PhysicalShares_Portfolio.pricesSheet,PhysicalShares_Portfolio.Share(i).IssuerCode,workbookSheetNames,workbookDates,workbookCodes,workbookNumericData);
+    valDateIndex = find(dates == valuationDate);
+    spot = stockPrices(valDateIndex);
+        
+    numRF = numRF + 1;
+    PhysicalShares_Portfolio.RF(:,numRF) = stockPrices;  
+    %using cont compounding returns - past year of data
+    %PhysicalShares_Portfolio.Returns(:,numRF) = log(stockPrices((valDateIndex-252):(valDateIndex-1))./stockPrices((valDateIndex-251):valDateIndex));
+    %PhysicalShares_Portfolio.Returns(:,numRF) = log(stockPrices((valDateIndex-360):(valDateIndex-1))./stockPrices((valDateIndex-359):valDateIndex));
+    
     OwnOrSold = PhysicalShares_Portfolio.Share(i).OwnOrSold;
-    PhysicalShares_Portfolio.Share(i).Price = OwnOrSold*PhysicalShares_Portfolio.Share(i).numShares*spot/1000000; %price in millions AUD
+    PhysicalShares_Portfolio.Share(i).Price = OwnOrSold*PhysicalShares_Portfolio.Share(i).numShares*spot; %price in millions AUD / 1000000   
     PhysicalShares_Portfolio.Price = PhysicalShares_Portfolio.Price + PhysicalShares_Portfolio.Share(i).Price;
 end
 
 % in millions 
 PhysicalShares_Portfolio.Price;
 
-option1 = struct('Price',0,'Maturity',datenum('9/10/2015',formatIn),'UnderlyingCode','BHP','CallOrPut',1,'OwnOrSold',1,'numShares',250000,'strike',28.00,'vol_pa',0.2953);
-option2 = struct('Price',0,'Maturity',datenum('8/01/2016',formatIn),'UnderlyingCode','RIO','CallOrPut',-1,'OwnOrSold',1,'numShares',200000,'strike',54.00,'vol_pa',0.2606);
-option3 = struct('Price',0,'Maturity',datenum('12/03/2016',formatIn),'UnderlyingCode','RIO','CallOrPut',1,'OwnOrSold',1,'numShares',200000,'strike',53.00,'vol_pa',0.2648);
-option4 = struct('Price',0,'Maturity',datenum('04/03/2016',formatIn),'UnderlyingCode','NCM','CallOrPut',-1,'OwnOrSold',-1,'numShares',200000,'strike',12.00,'vol_pa',0.4418);
-option5 = struct('Price',0,'Maturity',datenum('07/04/2016',formatIn),'UnderlyingCode','NCM','CallOrPut',1,'OwnOrSold',-1,'numShares',250000,'strike',10.00,'vol_pa',0.44);
-option6 = struct('Price',0,'Maturity',datenum('09/06/2016',formatIn),'UnderlyingCode','WPL','CallOrPut',-1,'OwnOrSold',1,'numShares',200000,'strike',33.00,'vol_pa',0.2522);
+for i = 1:numSharesPositions
+    PhysicalShares_Portfolio.weights(i) = PhysicalShares_Portfolio.Share(i).Price/PhysicalShares_Portfolio.Price;
+end
 
-ShareOptions_Portfolio = struct('ShareOption',[option1 option2 option3 option4 option5 option6],'Price',0);
+% CI = 0.99;
+% alpha = norminv(CI);
+% holdingTdays = 1;
+% avReturns = mean(PhysicalShares_Portfolio.Returns);
+% covars = cov(PhysicalShares_Portfolio.Returns);
+% mu    = sum(PhysicalShares_Portfolio.weights.*avReturns);
+% x = 
+% PhysicalShares_Portfolio_analyExactVAR = sqrt(holdingTdays)*(-PhysicalShares_Portfolio.Price*mu + alpha*sqrt(holdingTdays)*sqrt(x'*covars*x));   
+% 
+% sigma = sqrt( PhysicalShares_Portfolio.weights * covars * PhysicalShares_Portfolio.weights' );
+% VaR = -sqrt(holdingTdays)*PhysicalShares_Portfolio.Price*(mu - sigma * norminv(CI));
+% 
+% portReturns = sort(PhysicalShares_Portfolio.Returns*PhysicalShares_Portfolio.weights');
+% pointer = round( (1-CI)*length(portReturns) + 0.1 );
+% pointer = reshape(pointer, length(pointer),1);
+% pointer = max(pointer, ones(length(pointer),1));
+% 
+% PhysicalShares_Portfolio_histVAR = -sqrt(holdingTdays)*PhysicalShares_Portfolio.Price * portReturns(pointer);
+
+% in $  
+fprintf('Portfolio 4: Shares and share options \n\n');
+fprintf('Valuation date: %s\n',datestr(valuationDate,dateFormatIn));
+for i = 1:size(PhysicalShares_Portfolio.Share,2)
+    fprintf('Value of PhysicalShares position %d: $%f  million AUD\n', i,PhysicalShares_Portfolio.Share(i).Price/1000000);
+end
+fprintf('Total value of PhysicalShares portfolio: $%f  million AUD\n\n', PhysicalShares_Portfolio.Price/1000000);
+
+
+
+option1 = struct('Price',0,'Delta',0,'Gamma',0,'Maturity',datenum('9/10/2015',dateFormatIn),'UnderlyingCode','BHP','CallOrPut',1,'OwnOrSold',1,'numShares',250000,'strike',28.00,'vol_pa',0.2953);
+option2 = struct('Price',0,'Delta',0,'Gamma',0,'Maturity',datenum('8/01/2016',dateFormatIn),'UnderlyingCode','RIO','CallOrPut',-1,'OwnOrSold',1,'numShares',200000,'strike',54.00,'vol_pa',0.2606);
+option3 = struct('Price',0,'Delta',0,'Gamma',0,'Maturity',datenum('12/03/2016',dateFormatIn),'UnderlyingCode','RIO','CallOrPut',1,'OwnOrSold',1,'numShares',200000,'strike',53.00,'vol_pa',0.2648);
+option4 = struct('Price',0,'Delta',0,'Gamma',0,'Maturity',datenum('04/03/2016',dateFormatIn),'UnderlyingCode','NCM','CallOrPut',-1,'OwnOrSold',-1,'numShares',200000,'strike',12.00,'vol_pa',0.4418);
+option5 = struct('Price',0,'Delta',0,'Gamma',0,'Maturity',datenum('07/04/2016',dateFormatIn),'UnderlyingCode','NCM','CallOrPut',1,'OwnOrSold',-1,'numShares',250000,'strike',10.00,'vol_pa',0.44);
+option6 = struct('Price',0,'Delta',0,'Gamma',0,'Maturity',datenum('09/06/2016',dateFormatIn),'UnderlyingCode','WPL','CallOrPut',-1,'OwnOrSold',1,'numShares',200000,'strike',33.00,'vol_pa',0.2522);
+
+ShareOptions_Portfolio = struct('ShareOption',[option1 option2 option3 option4 option5 option6],'Price',0,'RF',[],'pricesSheet','stock prices');
 numSharesOptPositions = size(ShareOptions_Portfolio.ShareOption,2);
 
 [valuDateYearFracs, codes, valuDateYields] = returnYieldCurveData('AUSTRALIA_ZERO_CURVE',workbookSheetNames,workbookDates,workbookCodes,workbookNumericData,valuationDate);
-
+numRF = 0;
 for i = 1:numSharesOptPositions      
-    [stockPrices,dates] = returnColData('stock prices',ShareOptions_Portfolio.ShareOption(i).UnderlyingCode,workbookSheetNames,workbookDates,workbookCodes,workbookNumericData);
+    [stockPrices,dates] = returnColData(ShareOptions_Portfolio.pricesSheet,ShareOptions_Portfolio.ShareOption(i).UnderlyingCode,workbookSheetNames,workbookDates,workbookCodes,workbookNumericData);
     valDateIndex = find(dates == valuationDate);
     spot = stockPrices(valDateIndex);
     
-    %returns = diff(stockPrices((valDateIndex-364):valDateIndex)) ./ stockPrices((valDateIndex-364):(valDateIndex-1));
-    stdv = std(returns);
-    vol = sqrt(365)*stdv;
+    % assuming daily data
+    %returns = diff(stockPrices((valDateIndex-359):valDateIndex)) ./ stockPrices((valDateIndex-359):(valDateIndex-1));
+    %stdv = std(returns);
+    %vol = sqrt(360)*stdv;
+    
+    %cont compounded returns
+    %returns = log(stockPrices((valDateIndex-360):(valDateIndex-1))./stockPrices((valDateIndex-359):valDateIndex));
+    %stdv = std(returns);
+    %vol = sqrt(360)*stdv;
+    
+    numRF = numRF + 1;
+    ShareOptions_Portfolio.RF(:,numRF) = stockPrices;  
  
     OwnOrSold = ShareOptions_Portfolio.ShareOption(i).OwnOrSold;
     numShares = ShareOptions_Portfolio.ShareOption(i).numShares;
@@ -386,12 +398,26 @@ for i = 1:numSharesOptPositions
     callOrPut = ShareOptions_Portfolio.ShareOption(i).CallOrPut;
     rate = interpolYield(expiry,valuDateYearFracs,valuDateYields);
     
-    ShareOptions_Portfolio.ShareOption(i).Price = OwnOrSold*numShares*bsPrice(spot, strike, rate, div, vol, expiry, callOrPut)/1000000;
+    ShareOptions_Portfolio.ShareOption(i).Price = OwnOrSold*numShares*bsPrice(spot, strike, rate, div, vol, expiry, callOrPut);
+    ShareOptions_Portfolio.ShareOption(i).Delta = bsDelta(spot, strike, rate, div, vol, expiry, callOrPut);
+    ShareOptions_Portfolio.ShareOption(i).Gamma = bsGamma(spot, strike, rate, div, vol, expiry);
+    
     ShareOptions_Portfolio.Price = ShareOptions_Portfolio.Price + ShareOptions_Portfolio.ShareOption(i).Price;
 end
 
-% in millions 
-ShareOptions_Portfolio.Price;
+% in $  
+for i = 1:size(ShareOptions_Portfolio.ShareOption,2)
+    fprintf('Value of ShareOptions position %d: $%f  million AUD\n', i,ShareOptions_Portfolio.ShareOption(i).Price/1000000);
+end
+fprintf('Total value of ShareOptions portfolio: $%f  million AUD\n\n', ShareOptions_Portfolio.Price/1000000);
+
+
+ShareOptions_Portfolio
+PhysicalShares_Portfolio
+
+go through each portfolio, look for the same rf create array of independent riskfactors 
+fprintf('#################################################################################################\n\n');
+
 
 %%
 % Portfolio 5
@@ -413,9 +439,9 @@ ShareOptions_Portfolio.Price;
 
 %might help in future to write the sett_frequ using yearfrac function
 %dependent upon day count basis used
-swap1 = struct('Price',0,'PayerOrRec',1,'Maturity',datenum('07/11/2015',formatIn),'Notional',20,'Sett_period',0.25,'SwapRate_pa',0.022);
-swap2 = struct('Price',0,'PayerOrRec',-1,'Maturity',datenum('07/08/2016',formatIn),'Notional',80,'Sett_period',0.5,'SwapRate_pa',0.023);
-swap3 = struct('Price',0,'PayerOrRec',1,'Maturity',datenum('06/11/2016',formatIn),'Notional',70,'Sett_period',0.25,'SwapRate_pa',0.0245);
+swap1 = struct('Price',0,'PayerOrRec',1,'Maturity',datenum('07/11/2015',dateFormatIn),'Notional',20,'Sett_period',0.25,'SwapRate_pa',0.022);
+swap2 = struct('Price',0,'PayerOrRec',-1,'Maturity',datenum('07/08/2016',dateFormatIn),'Notional',80,'Sett_period',0.5,'SwapRate_pa',0.023);
+swap3 = struct('Price',0,'PayerOrRec',1,'Maturity',datenum('06/11/2016',dateFormatIn),'Notional',70,'Sett_period',0.25,'SwapRate_pa',0.0245);
         
 swap_Portfolio = struct('Swap',[swap1 swap2 swap3],'Price',0);
 numSwaps = size(swap_Portfolio.Swap,2);
@@ -451,129 +477,15 @@ for i = 1:numSwaps
     swap_Portfolio.Price = swap_Portfolio.Price + swap_Portfolio.Swap(i).Price;
 end
 
+% in millions 
+fprintf('Portfolio 5: Interest rate swaps \n\n');
+fprintf('Valuation date: %s\n',datestr(valuationDate-1,dateFormatIn));
+for i = 1:size(swap_Portfolio.Swap,2)
+    fprintf('Value of IRS position %d: $%f  million AUD\n', i,swap_Portfolio.Swap(i).Price);
 end
+fprintf('Total value of IRS portfolio: $%f  million AUD\n\n', swap_Portfolio.Price);
+
+fprintf('#################################################################################################\n\n');
 
 
-
-
-
-
-
-function [dates] = returnDates(sheetName,sheetNames,workbookDates)
-    sheetIndex = strcmp(sheetNames',sheetName);
-    dates = workbookDates{sheetIndex};
-end
-
-function [colNumeric, varargout] = returnColData(sheetName,codeString,sheetNames,workbookDates,workbookCodes,workbookNumericData)
-    sheetIndex = strcmp(sheetNames',sheetName);
-    sheetNumericData = workbookNumericData{sheetIndex};
-    colIndex = strcmp(workbookCodes{sheetIndex},codeString);
-    colNumeric = sheetNumericData(:,colIndex);
-    
-    nout = max(nargout,1)-1;
-    if(nout > 0)
-        varargout{1} = workbookDates{sheetIndex};
-    end
-end
-
-function [rowNumeric,varargout] = returnRowData(sheetName,sheetNames,workbookDates,workbookCodes,workbookNumericData,valuationDate) 
-    sheetIndex = strcmp(sheetNames',sheetName);
-    sheetNumericData = workbookNumericData{sheetIndex};
-    rowIndex = find(workbookDates{sheetIndex}== valuationDate);
-    rowNumeric = sheetNumericData(rowIndex,:);
-    
-    nout = max(nargout,1)-1;
-    if(nout > 0)
-        varargout{1} = workbookCodes{sheetIndex};
-    end
-end
-
-function [varargout] = returnYieldCurveData(sheetName,sheetNames,workbookDates,workbookCodes,workbookNumericData,valuationDate)
-    if(nargout > 0)
-          % using 30/360 convention
-          RELDATE00Y00 = valuationDate;
-          RELDATE00Y01 = daysadd(valuationDate,1*30,1);
-          RELDATE00Y02 = daysadd(valuationDate,2*30,1);
-          RELDATE00Y03 = daysadd(valuationDate,3*30,1);
-          RELDATE00Y06 = daysadd(valuationDate,6*30,1);
-          RELDATE00Y09 = daysadd(valuationDate,9*30,1);
-          RELDATE01Y00 = daysadd(valuationDate,1*360,1);
-          RELDATE02Y00 = daysadd(valuationDate,2*360,1);
-          RELDATE03Y00 = daysadd(valuationDate,3*360,1);
-          RELDATE04Y00 = daysadd(valuationDate,4*360,1);
-          RELDATE05Y00 = daysadd(valuationDate,5*360,1);
-          RELDATE06Y00 = daysadd(valuationDate,6*360,1);
-          RELDATE07Y00 = daysadd(valuationDate,7*360,1);
-          RELDATE08Y00 = daysadd(valuationDate,8*360,1);
-          RELDATE09Y00 = daysadd(valuationDate,9*360,1);
-          
-          varargout{1} = yearfrac(valuationDate,[RELDATE00Y00 RELDATE00Y01 RELDATE00Y02 RELDATE00Y03	RELDATE00Y06	RELDATE00Y09	RELDATE01Y00	...
-                                                 RELDATE02Y00 RELDATE03Y00 RELDATE04Y00 RELDATE05Y00	RELDATE06Y00	RELDATE07Y00	RELDATE08Y00	RELDATE09Y00],1);
-          
-          sheetIndex = strcmp(sheetNames',sheetName);
-          
-          if(nargout > 1)
-            varargout{2} = workbookCodes{sheetIndex};
-          
-            if(nargout > 2)
-                sheetNumericData = workbookNumericData{sheetIndex};
-                rowIndex = find(workbookDates{sheetIndex}== valuationDate);
-                varargout{3} = sheetNumericData(rowIndex,:);
-            end
-          end
-    
-    end
-end
-
-function [varargout] = returnIRSCurveData(sheetName,sheetNames,workbookDates,workbookCodes,workbookNumericData,valuationDate)
-    if(nargout > 0)
-          % using 30/360 convention
-          RELDATE00Y01 = daysadd(valuationDate,1*30,1);
-          RELDATE00Y02 = daysadd(valuationDate,2*30,1);
-          RELDATE00Y03 = daysadd(valuationDate,3*30,1);
-          RELDATE00Y04 = daysadd(valuationDate,4*30,1);
-          RELDATE00Y05 = daysadd(valuationDate,5*30,1);
-          RELDATE00Y06 = daysadd(valuationDate,6*30,1);
-          RELDATE01Y00 = daysadd(valuationDate,1*360,1);
-          RELDATE02Y00 = daysadd(valuationDate,2*360,1);
-          RELDATE03Y00 = daysadd(valuationDate,3*360,1);
-          
-          varargout{1} = yearfrac(valuationDate,[RELDATE00Y01 RELDATE00Y02 RELDATE00Y03	RELDATE00Y04    RELDATE00Y05    RELDATE00Y06...
-                                                RELDATE01Y00	RELDATE02Y00 RELDATE03Y00],1);
-          
-          sheetIndex = strcmp(sheetNames',sheetName);
-          
-          if(nargout > 1)
-            varargout{2} = workbookCodes{sheetIndex};
-          
-            if(nargout > 2)
-                sheetNumericData = workbookNumericData{sheetIndex};
-                rowIndex = find(workbookDates{sheetIndex}== valuationDate);
-                varargout{3} = sheetNumericData(rowIndex,:);
-            end
-          end
-    
-    end
-end
-
-function price = ZCB_price_contComp(maturityYears,yield)
-%using cont compounding..what about simple? 
-price = exp(-maturityYears*yield);
-end
-
-function forwardRateT1_T2 = ForwardRate_contComp(T1,yieldT1,T2,yieldT2)
-%using cont compounding..what about simple? 
-forwardRateT1_T2 = -(log(ZCB_price_contComp(T2,yieldT2))-log(ZCB_price_contComp(T1,yieldT1)))/(T2-T1);
-end
-
-function intepYield = interpolYield(yearFrac,setYearFracs,setYields)
-minDateLoc = min(find(yearFrac < setYearFracs))-1; %#ok<MXFND>
-intepYield = setYields(minDateLoc) + (yearFrac - setYearFracs(minDateLoc)).*(setYields(minDateLoc + 1) - setYields(minDateLoc))./(setYearFracs(minDateLoc + 1) - setYearFracs(minDateLoc));
-end
-
-function RF_yield = ZCB_yieldCurveRiskFactor(yearFrac,setYearFracs,codes,workbookSheetNames,workbookDates,workbookCodes,workbookNumericData)
-minDateLoc = min(find(yearFrac < setYearFracs))-1;
-minYield = returnColData('AUSTRALIA_ZERO_CURVE',codes{minDateLoc},workbookSheetNames,workbookDates,workbookCodes,workbookNumericData);
-maxYield = returnColData('AUSTRALIA_ZERO_CURVE',codes{minDateLoc + 1},workbookSheetNames,workbookDates,workbookCodes,workbookNumericData);
-RF_yield = minYield + (yearFrac - setYearFracs(minDateLoc)).*(maxYield - minYield)./(setYearFracs(minDateLoc + 1) - setYearFracs(minDateLoc));
 end
