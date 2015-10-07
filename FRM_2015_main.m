@@ -99,8 +99,8 @@ fprintf('Total value of bond portfolio: $%f  million AUD\n\n', couponBond_Portfo
 CI = [0.95,0.99];
 holdingTdays = [1,10];
 
-for i = 1:size(CI,2)
-    for j = 1:size(holdingTdays,2)
+for j = 1:size(holdingTdays,2)
+    for i = 1:size(CI,2)
         couponBond_Portfolio_deltaAnalyVAR = BondPortfolio_deltaAnalyVAR(CI(i),holdingTdays(j),couponBond_Portfolio,valuationDate,workbookSheetNames,workbookDates);
         couponBond_Portfolio_deltaGammaHistSimVaR = BondPortfolio_deltaGammaHistSimVaR(CI(i),holdingTdays(j),couponBond_Portfolio,valuationDate,workbookSheetNames,workbookDates);
         
@@ -145,13 +145,13 @@ fprintf('Valuation date: %s\n',datestr(valuationDate,dateFormatIn));
 for i = 1:size(FX_Portfolio.Currencies,2)
     fprintf('Value of currency position %d: $%f  million AUD\n', i,FX_Portfolio.Currencies(i).DomesticEquivAmount);
 end
-fprintf('Total value of FX portfolio: $%f  million AUD\n\n', FX_Portfolio.Price);
+fprintf('Total value of Spot FX portfolio: $%f  million AUD\n\n', FX_Portfolio.Price);
     
 CI = [0.95,0.99];
 holdingTdays = [1,10];
 
-for i = 1:size(CI,2)
-    for j = 1:size(holdingTdays,2)
+for j = 1:size(holdingTdays,2)
+    for i = 1:size(CI,2)
         FX_Portfolio_analyExactVAR = FXPortfolio_analyExactVAR(FX_Portfolio, CI(i), holdingTdays(j),workbookSheetNames,workbookDates,valuationDate);
         FX_Portfolio_histVAR = FXPortfolio_histExactVAR(FX_Portfolio, CI(i), holdingTdays(j),workbookSheetNames,workbookDates,valuationDate);
         
@@ -234,6 +234,8 @@ for i = 1:size(FWDFX_Portfolio.FWDFX,2)
 end
 fprintf('Total value of FWDFX portfolio: $%f  million AUD\n\n', FWDFX_Portfolio.Price);
 
+fprintf('Total value of FX portfolio: $%f  million AUD\n\n', FWDFX_Portfolio.Price + FXOptions_Portfolio.Price);
+
 fprintf('#################################################################################################\n\n');
 
 
@@ -288,8 +290,8 @@ fprintf('Total value of Equity Portfolio: $%f  million AUD\n\n', combinedEquityP
 CI = [0.95,0.99];
 holdingTdays = [1,10];
 
-for i = 1:size(CI,2)
-    for j = 1:size(holdingTdays,2)
+for j = 1:size(holdingTdays,2)
+    for i = 1:size(CI,2)
         combinedEquityPortfolio_analyDeltaNormVAR = equityPortfolio_analyDeltaNormVAR(CI(i),holdingTdays(j),combinedEquityPortfolio,valuationDate,workbookSheetNames,workbookDates);
         combinedEquityPortfolio_analyDeltaGammaVAR = equityPortfolio_analyDeltaGammaVAR(CI(i),holdingTdays(j),combinedEquityPortfolio,valuationDate,workbookSheetNames,workbookDates);        
 
@@ -337,8 +339,8 @@ numSwaps = size(swap_Portfolio.Swap,2);
 %% NOTE: VALUATION DATE IS INCORRECT BECAUSE DATA HAD ZERO RATES 
 % SUBTRACTED ONE FROM VALUATION DATE TO TEST METHOD
 %%[valuDateIRSYearFracs, IRScodes, valuDateIRSYields] = returnIRSCurveData('Interest Rate Swap Data',workbookSheetNames,workbookDates,workbookCodes,workbookNumericData,valuationDate);
-[valuDateYieldYearFracs, Yieldcodes, valuDateYields] = returnYieldCurveData('AUSTRALIA_ZERO_CURVE',workbookSheetNames,workbookDates,workbookCodes,workbookNumericData,valuationDate-1);
-[valuDateIRSYearFracs, IRScodes, valuDateIRSR] = returnIRSCurveData('Interest Rate Swap Data',workbookSheetNames,workbookDates,workbookCodes,workbookNumericData,valuationDate-1);
+[valuDateYieldYearFracs, Yieldcodes, valuDateYields] = returnYieldCurveData('AUSTRALIA_ZERO_CURVE',workbookSheetNames,workbookDates,workbookCodes,workbookNumericData,datenum('06/08/2015',dateFormatIn));
+[valuDateIRSYearFracs, IRScodes, valuDateIRSR] = returnIRSCurveData('Interest Rate Swap Data',workbookSheetNames,workbookDates,workbookCodes,workbookNumericData,datenum('06/08/2015',dateFormatIn));
 %add spot interest rate - IRS data doesnt have it
 valuDateIRSYearFracs = [0 valuDateIRSYearFracs];
 valuDateIRSR = [valuDateYields(1) valuDateIRSR];
@@ -349,12 +351,15 @@ for i = 1:numSwaps
     Notional = swap_Portfolio.Swap(i).Notional;
     
     swapYearFrac = yearfrac(valuationDate,swap_Portfolio.Swap(i).Maturity,1);
-    while(swapYearFrac >= swap_Portfolio.Swap(i).Sett_period)        
+    while(swapYearFrac > 0)        
         ZCB = ZCB_price_contComp(swapYearFrac,interpolYield(swapYearFrac,valuDateIRSYearFracs,valuDateIRSR));
         PV_fixedLeg = Notional*swap_Portfolio.Swap(i).Sett_period*swap_Portfolio.Swap(i).SwapRate_pa*ZCB;
         
         T2 = swapYearFrac;
         T1 = T2 - swap_Portfolio.Swap(i).Sett_period;
+        if(T1 < 0 )
+            T1 = 0;
+        end
         yieldT2 = interpolYield(T2,valuDateIRSYearFracs,valuDateIRSR);
         yieldT1 = interpolYield(T1,valuDateIRSYearFracs,valuDateIRSR);
         PV_floatingLeg = Notional*swap_Portfolio.Swap(i).Sett_period*ForwardRate_contComp(T1,yieldT1,T2,yieldT2)*ZCB;
@@ -364,7 +369,7 @@ for i = 1:numSwaps
     end
     
     %work out accural interest since last coupon date
-    swap_Price = swap_Price + swapYearFrac*swap_Portfolio.Swap(i).PayerOrRec*(PV_fixedLeg - PV_floatingLeg)/swap_Portfolio.Swap(i).Sett_period;    
+    %swap_Price = swap_Price + swapYearFrac*swap_Portfolio.Swap(i).PayerOrRec*(PV_fixedLeg - PV_floatingLeg)/swap_Portfolio.Swap(i).Sett_period;    
     swap_Portfolio.Swap(i).Price = swap_Price;
 
     swap_Portfolio.Price = swap_Portfolio.Price + swap_Portfolio.Swap(i).Price;
@@ -372,7 +377,7 @@ end
 
 % in millions 
 fprintf('Portfolio 5: Interest rate swaps \n\n');
-fprintf('Valuation date: %s\n',datestr(valuationDate-1,dateFormatIn));
+fprintf('Valuation date: %s\n',datestr(datenum('06/08/2015',dateFormatIn),dateFormatIn));
 for i = 1:size(swap_Portfolio.Swap,2)
     fprintf('Value of IRS position %d: $%f  million AUD\n', i,swap_Portfolio.Swap(i).Price);
 end

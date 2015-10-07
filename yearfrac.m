@@ -84,9 +84,9 @@ end
 
 
 %Make sure all input arguments are of the same size and shape
-if (checksiz([size(Date1); size(Date2); size(Basis)], mfilename))
-     return
-end 
+% if (checksiz([size(Date1); size(Date2); size(Basis)], mfilename))
+%      return
+% end 
 
 
 
