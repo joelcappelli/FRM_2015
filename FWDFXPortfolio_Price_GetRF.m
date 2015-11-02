@@ -10,13 +10,13 @@ function FWDFX_Portfolio = FWDFXPortfolio_Price_GetRF(FWDFX_Portfolio,valuationD
         spotSellFX = sellFX_rates(dates == valuationDate);
 
         sellAmount = FWDFX_Portfolio.FWDFX(i).SellAmount;
-        strikeSellFX = FWDFX_Portfolio.FWDFX(i).BuyAmount/FWDFX_Portfolio.FWDFX(i).SellAmount;
+        buyAmount = FWDFX_Portfolio.FWDFX(i).BuyAmount;
 
         expiry = yearfrac(valuationDate,FWDFX_Portfolio.FWDFX(i).Exp_Date,1);
         sellFXYield = interpolYield(expiry,valuDateYearFracsSell,valuDateSellYields);
         buyFXYield = interpolYield(expiry,valuDateYearFracsBuy,valuDateBuyYields);
 
-        FWDFX_Portfolio.FWDFX(i).Price = sellAmount*(spotSellFX*exp(-buyFXYield*expiry) - strikeSellFX*exp(-sellFXYield*expiry));
+        FWDFX_Portfolio.FWDFX(i).Price = buyAmount*(1/spotSellFX)*exp(-buyFXYield*expiry) - sellAmount*exp(-sellFXYield*expiry);
         FWDFX_Portfolio.Price = FWDFX_Portfolio.Price + FWDFX_Portfolio.FWDFX(i).Price;
     end
 end

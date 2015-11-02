@@ -3,8 +3,8 @@ function VAR = BondPortfolio_deltaGammaHistSimVaR(CI,holdingTdays,couponBond_Por
     valDateIndex = find(returnDates(couponBond_Portfolio.yieldCurveSheet,workbookSheetNames,workbookDates) == valuationDate);
     
     %non-overlapping data
-    couponBond_PortfolioRF_last250periods = couponBond_Portfolio.RF((valDateIndex-250*holdingTdays):holdingTdays:(valDateIndex - holdingTdays),:);
-    diffRFYields = diff(couponBond_PortfolioRF_last250periods,1,1)';%take transpose for VAR calcs
+    couponBond_PortfolioRF_last252periods = couponBond_Portfolio.RF((valDateIndex-252*holdingTdays):holdingTdays:(valDateIndex - holdingTdays),:);
+    diffRFYields = diff(couponBond_PortfolioRF_last252periods,1,1)';%take transpose for VAR calcs
     
     PV_CF = couponBond_Portfolio.PV_CF;
     RF_yearFrac = couponBond_Portfolio.ZCB_yearFrac;

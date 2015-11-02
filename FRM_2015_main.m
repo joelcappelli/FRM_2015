@@ -234,10 +234,34 @@ for i = 1:size(FWDFX_Portfolio.FWDFX,2)
 end
 fprintf('Total value of FWDFX portfolio: $%f  million AUD\n\n', FWDFX_Portfolio.Price);
 
-fprintf('Total value of FX portfolio: $%f  million AUD\n\n', FWDFX_Portfolio.Price + FXOptions_Portfolio.Price);
 
 fprintf('#################################################################################################\n\n');
 
+% %go through each portfolio, look for the same underlying create array of independent riskfactors 
+% combinedFXderivPortfolio = struct('FXOptions_Portfolio',FXOptions_Portfolio,'FWDFX_Portfolio',FWDFX_Portfolio,'Price',0,'RF',[],'FWDPositions',[],'FXoptionPositions',[],'Deltas',[],'Gammas',[],'UnderlyingCode',{{}},'pricesSheet','stock prices');
+% combinedFXderivPortfolio = equityPortfolio_Price_GetRF(combinedFXderivPortfolio);
+% fprintf('Total value of FXderiv portfolio: $%f  million AUD\n\n', FWDFX_Portfolio.Price + FXOptions_Portfolio.Price);
+% 
+% CI = [0.95,0.99];
+% holdingTdays = [1,10];
+% 
+% for j = 1:size(holdingTdays,2)
+%     for i = 1:size(CI,2)
+%         combinedEquityPortfolio_analyDeltaNormVAR = equityPortfolio_analyDeltaNormVAR(CI(i),holdingTdays(j),combinedFXderivPortfolio,valuationDate,workbookSheetNames,workbookDates);
+%         combinedEquityPortfolio_analyDeltaGammaVAR = equityPortfolio_analyDeltaGammaVAR(CI(i),holdingTdays(j),combinedFXderivPortfolio,valuationDate,workbookSheetNames,workbookDates);        
+% 
+%         combinedEquityPortfolio_histSimDeltaNormVAR = equityPortfolio_histSimDeltaNormVAR(CI(i),holdingTdays(j),combinedFXderivPortfolio,valuationDate,workbookSheetNames,workbookDates);
+%         combinedEquityPortfolio_histSimDeltaGammaVAR = equityPortfolio_histSimDeltaGammaVAR(CI(i),holdingTdays(j),combinedFXderivPortfolio,valuationDate,workbookSheetNames,workbookDates);
+%         
+%         fprintf('VAR with CI: %.2f%% and holding period of %d days\n', 100*CI(i),holdingTdays(j));
+%         fprintf('analyDeltaNormVAR of Equity portfolio $%f  million AUD\n', combinedEquityPortfolio_analyDeltaNormVAR/1000000);
+%         fprintf('analyDeltaGammaVAR of Equity portfolio $%f  million AUD\n', combinedEquityPortfolio_analyDeltaGammaVAR/1000000);
+%         fprintf('histSimDeltaNormVAR of Equity portfolio $%f  million AUD\n', combinedEquityPortfolio_histSimDeltaNormVAR/1000000);
+%         fprintf('histSimDeltaGammaVAR of Equity portfolio $%f  million AUD\n\n', combinedEquityPortfolio_histSimDeltaGammaVAR/1000000);
+%     end
+% end
+%   
+% fprintf('#################################################################################################\n\n');
 
 %%
 % Portfolio 4
