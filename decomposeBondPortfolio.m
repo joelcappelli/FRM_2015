@@ -4,7 +4,7 @@ function BondPortfolio = decomposeBondPortfolio(BondPortfolio,valuationDate,work
     %decomposed into ZCB with assoicated linearly interpolated yield data for
     %each cash flow 
     numRF = 0;
-    [valuDateYearFracs, codes, valuDateYields] = returnYieldCurveData(BondPortfolio.yieldCurveSheet,workbookSheetNames,workbookDates,workbookCodes,workbookNumericData,valuationDate);
+    [valuDateYearFracs, codes, valuDateYields] = returnYieldCurveData(BondPortfolio.YieldCode,workbookSheetNames,workbookDates,workbookCodes,workbookNumericData,valuationDate);
     % make sure each risk factor is column vector to be used with covar matlab
     % method
     for i = 1:numBonds
@@ -26,7 +26,7 @@ function BondPortfolio = decomposeBondPortfolio(BondPortfolio,valuationDate,work
             end
 
             numRF = numRF + 1;
-            BondPortfolio.RF(:,numRF) = yieldCurveRiskFactor(BondPortfolio.yieldCurveSheet,couponDateYearFrac,valuDateYearFracs,codes,workbookSheetNames,workbookDates,workbookCodes,workbookNumericData);
+            BondPortfolio.RF(:,numRF) = yieldCurveRiskFactor(BondPortfolio.YieldCode,couponDateYearFrac,valuDateYearFracs,codes,workbookSheetNames,workbookDates,workbookCodes,workbookNumericData);
             BondPortfolio.PV_CF(numRF) = PV_CF;
             BondPortfolio.ZCB_yearFrac(numRF) = couponDateYearFrac;
 

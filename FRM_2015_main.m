@@ -86,7 +86,7 @@ couponBond5 = struct('Price',0,'C_rate_pa',0.045,'Maturity',datenum('15/04/2019 
 %assume same yield curve risk factors for all coupon bonds 
 % can price and compute VAR separately for portfolio of bonds per yield
 % curve
-couponBond_Portfolio = struct('CouponBond',[couponBond1 couponBond2 couponBond3 couponBond4 couponBond5],'Price',0,'yieldCurveSheet','AUSTRALIA_ZERO_CURVE','RF',[],'PV_CF',[],'ZCB_yearFrac',[]);
+couponBond_Portfolio = struct('CouponBond',[couponBond1 couponBond2 couponBond3 couponBond4 couponBond5],'Price',0,'YieldCode','AUSTRALIA_ZERO_CURVE','RF',[],'PV_CF',[],'ZCB_yearFrac',[]);
 couponBond_Portfolio = decomposeBondPortfolio(couponBond_Portfolio,valuationDate,workbookSheetNames,workbookDates,workbookCodes,workbookNumericData);
 
 fprintf('Portfolio 1: Bond portfolio \n\n');
@@ -185,13 +185,13 @@ fprintf('#######################################################################
 % bought is positive value
 % sold is negative value
 
-fxoption1 = struct('Price',0,'Exp_Date',datenum('9/10/2015',dateFormatIn),'UnderlyingExchaRateCode','AUD $ to US $','UnderlyingYieldCode','US_ZERO_CURVE','CallOrPut',1,'OwnOrSold',1,'ForeignAmount',150.00,'DomesticAmount',205.68);
-fxoption2 = struct('Price',0,'Exp_Date',datenum('11/12/2015',dateFormatIn),'UnderlyingExchaRateCode','AUD $ to US $','UnderlyingYieldCode','US_ZERO_CURVE','CallOrPut',-1,'OwnOrSold',1,'ForeignAmount',210.00,'DomesticAmount',280.15);
-fxoption3 = struct('Price',0,'Exp_Date',datenum('13/12/2015',dateFormatIn),'UnderlyingExchaRateCode','AUD $ TO CHF','UnderlyingYieldCode','SWISS_ZERO_CURVE','CallOrPut',1,'OwnOrSold',1,'ForeignAmount',100.00,'DomesticAmount',138.12);
-fxoption4 = struct('Price',0,'Exp_Date',datenum('08/02/2016',dateFormatIn),'UnderlyingExchaRateCode',' AUD $ TO EURO','UnderlyingYieldCode','EURO_ZERO_CURVE','CallOrPut',1,'OwnOrSold',-1,'ForeignAmount',180.00,'DomesticAmount',265.53);
-fxoption5 = struct('Price',0,'Exp_Date',datenum('05/04/2016',dateFormatIn),'UnderlyingExchaRateCode',' AUD $ TO EURO','UnderlyingYieldCode','EURO_ZERO_CURVE','CallOrPut',-1,'OwnOrSold',1,'ForeignAmount',220.00,'DomesticAmount',337.99);
+fxoption1 = struct('Price',0,'Delta',0,'Gamma',0,'Exp_Date',datenum('9/10/2015',dateFormatIn),'UnderlyingExchaRateCode','AUD $ to US $','UnderlyingYieldCode','US_ZERO_CURVE','CallOrPut',1,'OwnOrSold',1,'ForeignAmount',150.00,'DomesticAmount',205.68);
+fxoption2 = struct('Price',0,'Delta',0,'Gamma',0,'Exp_Date',datenum('11/12/2015',dateFormatIn),'UnderlyingExchaRateCode','AUD $ to US $','UnderlyingYieldCode','US_ZERO_CURVE','CallOrPut',-1,'OwnOrSold',1,'ForeignAmount',210.00,'DomesticAmount',280.15);
+fxoption3 = struct('Price',0,'Delta',0,'Gamma',0,'Exp_Date',datenum('13/12/2015',dateFormatIn),'UnderlyingExchaRateCode','AUD $ TO CHF','UnderlyingYieldCode','SWISS_ZERO_CURVE','CallOrPut',1,'OwnOrSold',1,'ForeignAmount',100.00,'DomesticAmount',138.12);
+fxoption4 = struct('Price',0,'Delta',0,'Gamma',0,'Exp_Date',datenum('08/02/2016',dateFormatIn),'UnderlyingExchaRateCode',' AUD $ TO EURO','UnderlyingYieldCode','EURO_ZERO_CURVE','CallOrPut',1,'OwnOrSold',-1,'ForeignAmount',180.00,'DomesticAmount',265.53);
+fxoption5 = struct('Price',0,'Delta',0,'Gamma',0,'Exp_Date',datenum('05/04/2016',dateFormatIn),'UnderlyingExchaRateCode',' AUD $ TO EURO','UnderlyingYieldCode','EURO_ZERO_CURVE','CallOrPut',-1,'OwnOrSold',1,'ForeignAmount',220.00,'DomesticAmount',337.99);
 
-FXOptions_Portfolio = struct('FXOption',[fxoption1 fxoption2 fxoption3 fxoption4 fxoption5],'Price',0,'DomesticYieldCurveSheet','AUSTRALIA_ZERO_CURVE','FXSheet','exchange_rates');
+FXOptions_Portfolio = struct('FXOption',[fxoption1 fxoption2 fxoption3 fxoption4 fxoption5],'Price',0,'RF',[],'pricesSheet','stock prices','DomesticYieldCurveSheet','AUSTRALIA_ZERO_CURVE','FXSheet','exchange_rates');
 FXOptions_Portfolio = FXOptionsPortfolio_Price_GetRF(FXOptions_Portfolio,valuationDate,workbookSheetNames,workbookDates,workbookCodes,workbookNumericData);
 
 % in millions 
@@ -226,7 +226,7 @@ fwdfx1 = struct('Price',0,'Exp_Date',datenum('07/11/2015',dateFormatIn),'BuyYiel
 fwdfx2 = struct('Price',0,'Exp_Date',datenum('08/12/2015',dateFormatIn),'BuyYieldCode','US_ZERO_CURVE','BuyAmount',50,'SellYieldCode','AUSTRALIA_ZERO_CURVE','SellAmount',66.83,'SellExchaRateCode','AUD $ to US $');
 fwdfx3 = struct('Price',0,'Exp_Date',datenum('15/01/2016',dateFormatIn),'BuyYieldCode','EURO_ZERO_CURVE','BuyAmount',30,'SellYieldCode','AUSTRALIA_ZERO_CURVE','SellAmount',44.67,'SellExchaRateCode',' AUD $ TO EURO');
 
-FWDFX_Portfolio = struct('FWDFX',[fwdfx1 fwdfx2 fwdfx3],'Price',0,'FXSheet','exchange_rates');
+FWDFX_Portfolio = struct('FWDFX',[fwdfx1 fwdfx2 fwdfx3],'Price',0,'RF',[],'exposures',[],'FXSheet','exchange_rates');
 FWDFX_Portfolio = FWDFXPortfolio_Price_GetRF(FWDFX_Portfolio,valuationDate,workbookSheetNames,workbookDates,workbookCodes,workbookNumericData);
 
 for i = 1:size(FWDFX_Portfolio.FWDFX,2)
@@ -236,12 +236,12 @@ fprintf('Total value of FWDFX portfolio: $%f  million AUD\n\n', FWDFX_Portfolio.
 
 
 fprintf('#################################################################################################\n\n');
-
+% 
 % %go through each portfolio, look for the same underlying create array of independent riskfactors 
 % combinedFXderivPortfolio = struct('FXOptions_Portfolio',FXOptions_Portfolio,'FWDFX_Portfolio',FWDFX_Portfolio,'Price',0,'RF',[],'FWDPositions',[],'FXoptionPositions',[],'Deltas',[],'Gammas',[],'UnderlyingCode',{{}},'pricesSheet','stock prices');
-% combinedFXderivPortfolio = equityPortfolio_Price_GetRF(combinedFXderivPortfolio);
-% fprintf('Total value of FXderiv portfolio: $%f  million AUD\n\n', FWDFX_Portfolio.Price + FXOptions_Portfolio.Price);
-% 
+% combinedFXderivPortfolio = FXderivPortfolio_Price_GetRF(combinedFXderivPortfolio);
+% fprintf('Total value of FXderiv portfolio: $%f  million AUD\n\n', combinedFXderivPortfolio.Price);
+
 % CI = [0.95,0.99];
 % holdingTdays = [1,10];
 % 
@@ -353,59 +353,38 @@ fprintf('#######################################################################
 
 %might help in future to write the sett_frequ using yearfrac function
 %dependent upon day count basis used
+% 1 reciever, -1 payer
 swap1 = struct('Price',0,'PayerOrRec',1,'Maturity',datenum('07/11/2015',dateFormatIn),'Notional',20,'Sett_period',0.25,'SwapRate_pa',0.022);
 swap2 = struct('Price',0,'PayerOrRec',-1,'Maturity',datenum('07/08/2016',dateFormatIn),'Notional',80,'Sett_period',0.5,'SwapRate_pa',0.023);
 swap3 = struct('Price',0,'PayerOrRec',1,'Maturity',datenum('06/11/2016',dateFormatIn),'Notional',70,'Sett_period',0.25,'SwapRate_pa',0.0245);
-        
-swap_Portfolio = struct('Swap',[swap1 swap2 swap3],'Price',0);
-numSwaps = size(swap_Portfolio.Swap,2);
 
-%% NOTE: VALUATION DATE IS INCORRECT BECAUSE DATA HAD ZERO RATES 
-% SUBTRACTED ONE FROM VALUATION DATE TO TEST METHOD
-%%[valuDateIRSYearFracs, IRScodes, valuDateIRSYields] = returnIRSCurveData('Interest Rate Swap Data',workbookSheetNames,workbookDates,workbookCodes,workbookNumericData,valuationDate);
-[valuDateYieldYearFracs, Yieldcodes, valuDateYields] = returnYieldCurveData('AUSTRALIA_ZERO_CURVE',workbookSheetNames,workbookDates,workbookCodes,workbookNumericData,datenum('06/08/2015',dateFormatIn));
-[valuDateIRSYearFracs, IRScodes, valuDateIRSR] = returnIRSCurveData('Interest Rate Swap Data',workbookSheetNames,workbookDates,workbookCodes,workbookNumericData,datenum('06/08/2015',dateFormatIn));
-%add spot interest rate - IRS data doesnt have it
-valuDateIRSYearFracs = [0 valuDateIRSYearFracs];
-valuDateIRSR = [valuDateYields(1) valuDateIRSR];
-
-for i = 1:numSwaps
-
-    swap_Price = 0;
-    Notional = swap_Portfolio.Swap(i).Notional;
-    
-    swapYearFrac = yearfrac(valuationDate,swap_Portfolio.Swap(i).Maturity,1);
-    while(swapYearFrac > 0)        
-        ZCB = ZCB_price_contComp(swapYearFrac,interpolYield(swapYearFrac,valuDateIRSYearFracs,valuDateIRSR));
-        PV_fixedLeg = Notional*swap_Portfolio.Swap(i).Sett_period*swap_Portfolio.Swap(i).SwapRate_pa*ZCB;
-        
-        T2 = swapYearFrac;
-        T1 = T2 - swap_Portfolio.Swap(i).Sett_period;
-        if(T1 < 0 )
-            T1 = 0;
-        end
-        yieldT2 = interpolYield(T2,valuDateIRSYearFracs,valuDateIRSR);
-        yieldT1 = interpolYield(T1,valuDateIRSYearFracs,valuDateIRSR);
-        PV_floatingLeg = Notional*swap_Portfolio.Swap(i).Sett_period*ForwardRate_contComp(T1,yieldT1,T2,yieldT2)*ZCB;
-        
-        swapYearFrac = swapYearFrac - swap_Portfolio.Swap(i).Sett_period;
-        swap_Price = swap_Price + swap_Portfolio.Swap(i).PayerOrRec*(PV_fixedLeg - PV_floatingLeg);
-    end
-    
-    %work out accural interest since last coupon date
-    %swap_Price = swap_Price + swapYearFrac*swap_Portfolio.Swap(i).PayerOrRec*(PV_fixedLeg - PV_floatingLeg)/swap_Portfolio.Swap(i).Sett_period;    
-    swap_Portfolio.Swap(i).Price = swap_Price;
-
-    swap_Portfolio.Price = swap_Portfolio.Price + swap_Portfolio.Swap(i).Price;
-end
+%% NOTE: zero rates copied from day before because there were some missing rates
+swap_Portfolio = struct('Swap',[swap1 swap2 swap3],'Price',0,'RF',[],'PV_CF',[],'ZCB_yearFrac',[],'YieldCode','AUSTRALIA_ZERO_CURVE','IRSCode','Interest Rate Swap Data');
+swap_Portfolio = SwapPortfolio_Price_GetRF(swap_Portfolio,valuationDate,workbookSheetNames,workbookDates,workbookCodes,workbookNumericData);
 
 % in millions 
 fprintf('Portfolio 5: Interest rate swaps \n\n');
-fprintf('Valuation date: %s\n',datestr(datenum('06/08/2015',dateFormatIn),dateFormatIn));
+fprintf('Valuation date: %s\n',datestr(valuationDate,dateFormatIn));
 for i = 1:size(swap_Portfolio.Swap,2)
     fprintf('Value of IRS position %d: $%f  million AUD\n', i,swap_Portfolio.Swap(i).Price);
 end
 fprintf('Total value of IRS portfolio: $%f  million AUD\n\n', swap_Portfolio.Price);
+
+fprintf('#################################################################################################\n\n');
+
+CI = [0.95,0.99];
+holdingTdays = [1,10];
+
+for j = 1:size(holdingTdays,2)
+    for i = 1:size(CI,2)
+        swap_Portfolio_deltaAnalyVAR = BondPortfolio_deltaAnalyVAR(CI(i),holdingTdays(j),swap_Portfolio,valuationDate,workbookSheetNames,workbookDates);
+        swap_Portfolio_deltaGammaHistSimVaR = BondPortfolio_deltaGammaHistSimVaR(CI(i),holdingTdays(j),swap_Portfolio,valuationDate,workbookSheetNames,workbookDates);
+    
+        fprintf('VAR with CI: %.2f%% and holding period of %d days\n', 100*CI(i),holdingTdays(j));
+        fprintf('deltaAnalyVAR of swap portfolio $%f  million AUD\n', swap_Portfolio_deltaAnalyVAR);
+        fprintf('deltaGammaHistSimVaR of swap portfolio $%f  million AUD\n\n', swap_Portfolio_deltaGammaHistSimVaR);
+    end
+end
 
 fprintf('#################################################################################################\n\n');
 

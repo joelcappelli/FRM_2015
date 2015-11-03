@@ -1,4 +1,4 @@
-function VAR = BondPortfolio_deltaGammaHistSimVaR(CI,holdingTdays,couponBond_Portfolio,valuationDate,workbookSheetNames,workbookDates)
+function VAR = BondPortfolio_deltaNormalHistSimVaR(CI,holdingTdays,couponBond_Portfolio,valuationDate,workbookSheetNames,workbookDates)
     
     valDateIndex = find(returnDates(couponBond_Portfolio.YieldCode,workbookSheetNames,workbookDates) == valuationDate);
     
@@ -8,7 +8,7 @@ function VAR = BondPortfolio_deltaGammaHistSimVaR(CI,holdingTdays,couponBond_Por
     
     PV_CF = couponBond_Portfolio.PV_CF;
     RF_yearFrac = couponBond_Portfolio.ZCB_yearFrac;
-    histSimDeltaP = sort((PV_CF.*RF_yearFrac)*diffRFYields + 0.5*(PV_CF.*RF_yearFrac.*RF_yearFrac)*(diffRFYields.*diffRFYields));
+    histSimDeltaP = sort((PV_CF.*RF_yearFrac)*diffRFYields);% + 0.5*(PV_CF.*RF_yearFrac.*RF_yearFrac)*(diffRFYields.*diffRFYields));
 
     pointer = round( (1-CI) * length(histSimDeltaP) + 0.1 );
     pointer = reshape( pointer, length(pointer), 1);

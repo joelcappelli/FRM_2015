@@ -4,7 +4,8 @@ function VAR = FXPortfolio_histExactVAR(FX_Portfolio, CI, holdingTdays,workbookS
     
     % T period cont. compounded returns - over 252 periods
     RFReturns_252periods = log(FX_Portfolio.RF((valDateIndex-252*holdingTdays):holdingTdays:(valDateIndex-1),:)./FX_Portfolio.RF((valDateIndex-251*holdingTdays):holdingTdays:valDateIndex,:));
-        
+    %RFReturns_252periods = diff(FX_Portfolio.RF((valDateIndex-251*holdingTdays):holdingTdays:valDateIndex,:))./FX_Portfolio.RF((valDateIndex-250*holdingTdays):holdingTdays:valDateIndex,:);%log(FX_Portfolio.RF((valDateIndex-252):(valDateIndex-1),:)./FX_Portfolio.RF((valDateIndex-251):valDateIndex,:));
+    
     portReturns = sort(RFReturns_252periods*FX_Portfolio.weights');
     pointer = round( (1-CI)*length(portReturns) + 0.1 );
     pointer = reshape(pointer, length(pointer),1);
