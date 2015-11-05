@@ -3,8 +3,6 @@ function swap_Portfolio = SwapPortfolio_Price_GetRF(swap_Portfolio,valuationDate
 numSwaps = size(swap_Portfolio.Swap,2);
 numRF = 0;
 
-RECEIVER = 1;
-
 [~, Yieldcodes, valuDateYields] = returnYieldCurveData(swap_Portfolio.YieldCode,workbookSheetNames,workbookDates,workbookCodes,workbookNumericData,valuationDate);
 [valuDateIRSYearFracsminusSpot, ~, valuDateIRSRminusSpot] = returnIRSCurveData(swap_Portfolio.IRSCode,workbookSheetNames,workbookDates,workbookCodes,workbookNumericData,valuationDate);
 %add spot interest rate - IRS data doesnt have it
@@ -35,21 +33,19 @@ for i = 1:numSwaps
 
         %there is no market risk with a payer swap i.e. receiving floating
         %payments therefore the value can be mapped as cash 
-        if(swap_Portfolio.Swap(i).PayerOrRec == RECEIVER)            
-            numRF = numRF + 1;
-            %grab the zero rates because the fixed rate coupon on the swap
-            %is the same as a coupon paying bond 
-            swap_Portfolio.RF(:,numRF) = yieldCurveRiskFactor(swap_Portfolio.YieldCode,swapYearFrac,valuDateIRSYearFracs,Yieldcodes,workbookSheetNames,workbookDates,workbookCodes,workbookNumericData);
-            
-            if(principalFixedPayment == 1)
-                swap_Portfolio.PV_CF(numRF) = PV_fixedLeg + Notional*ZCB;
-                principalFixedPayment = 0;
-            else
-                swap_Portfolio.PV_CF(numRF) = PV_fixedLeg;
-            end
-            
-            swap_Portfolio.ZCB_yearFrac(numRF) = swapYearFrac;
+        numRF = numRF + 1;
+        %grab the zero rates because the fixed rate coupon on the swap
+        %is the same as a coupon paying bond 
+        swap_Portfolio.RF(:,numRF) = yieldCurveRiskFactor(swap_Portfolio.YieldCode,swapYearFrac,valuDateIRSYearFracs,Yieldcodes,workbookSheetNames,workbookDates,workbookCodes,workbookNumericData);
+
+        if(principalFixedPayment == 1)
+            swap_Portfolio.PV_CF(numRF) = swap_Portfolio.Swap(i).PayerOrRec*(PV_fixedLeg + Notional*ZCB);
+            principalFixedPayment = 0;
+        else
+            swap_Portfolio.PV_CF(numRF) = swap_Portfolio.Swap(i).PayerOrRec*PV_fixedLeg;
         end
+
+        swap_Portfolio.ZCB_yearFrac(numRF) = swapYearFrac;
         
         swapYearFrac = swapYearFrac - swap_Portfolio.Swap(i).Sett_period;
     end

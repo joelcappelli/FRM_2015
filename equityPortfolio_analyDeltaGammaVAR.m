@@ -8,7 +8,7 @@ function VAR = equityPortfolio_analyDeltaGammaVAR(CI,holdingTdays,combinedEquity
     covars = cov(RFreturns);
     
     S = combinedEquityPortfolio.RF(valDateIndex,:);
-    xdelta = transpose(combinedEquityPortfolio.Deltas.*S);
+    xdelta = transpose(combinedEquityPortfolio.DeltasAndLinearPos.*S);
     
     S2 = transpose(combinedEquityPortfolio.RF(valDateIndex,:).*combinedEquityPortfolio.RF(valDateIndex,:));
     gammaCovarS2 = diag(combinedEquityPortfolio.Gammas)*covars*S2;

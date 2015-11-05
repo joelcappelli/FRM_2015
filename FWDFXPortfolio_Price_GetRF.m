@@ -18,14 +18,14 @@ function FWDFX_Portfolio = FWDFXPortfolio_Price_GetRF(FWDFX_Portfolio,valuationD
         buyFXYield = interpolYield(expiry,valuDateYearFracsBuy,valuDateBuyYields);
 
         numRF = numRF + 1;
-        FWDFX_Portfolio.RF(:,numRF) = 1./sellFX_rates;  
-        FWDFX_Portfolio.exposures(:,numRF) = (1/spotSellFX)*exp(-buyFXYield*expiry); 
-        numRF = numRF + 1;
-        FWDFX_Portfolio.RF(:,numRF) = yieldCurveRiskFactor(FWDFX_Portfolio.FWDFX(i).BuyYieldCode,expiry,valuDateYearFracsBuy,codesBuyYields,workbookSheetNames,workbookDates,workbookCodes,workbookNumericData); 
-        FWDFX_Portfolio.exposures(:,numRF) = (1/spotSellFX)*exp(-buyFXYield*expiry); 
-        numRF = numRF + 1;
-        FWDFX_Portfolio.RF(:,numRF) = yieldCurveRiskFactor(FWDFX_Portfolio.FWDFX(i).SellYieldCode,expiry,valuDateYearFracsSell,codesSellYields,workbookSheetNames,workbookDates,workbookCodes,workbookNumericData); 
-        FWDFX_Portfolio.exposures(:,numRF) = -sellAmount/buyAmount*exp(-sellFXYield*expiry); 
+        FWDFX_Portfolio.RF(:,numRF) = exp(-buyFXYield*expiry)*1./sellFX_rates; 
+%       FWDFX_Portfolio.RF(:,numRF) = 1./sellFX_rates;
+%         numRF = numRF + 1;
+%         FWDFX_Portfolio.RF(:,numRF) = yieldCurveRiskFactor(FWDFX_Portfolio.FWDFX(i).BuyYieldCode,expiry,valuDateYearFracsBuy,codesBuyYields,workbookSheetNames,workbookDates,workbookCodes,workbookNumericData); 
+%         FWDFX_Portfolio.exposures(:,numRF) = (1/spotSellFX)*exp(-buyFXYield*expiry); 
+%         numRF = numRF + 1;
+%         FWDFX_Portfolio.RF(:,numRF) = yieldCurveRiskFactor(FWDFX_Portfolio.FWDFX(i).SellYieldCode,expiry,valuDateYearFracsSell,codesSellYields,workbookSheetNames,workbookDates,workbookCodes,workbookNumericData); 
+%         FWDFX_Portfolio.exposures(:,numRF) = -sellAmount/buyAmount*exp(-sellFXYield*expiry); 
         
         FWDFX_Portfolio.FWDFX(i).Price = buyAmount*(1/spotSellFX)*exp(-buyFXYield*expiry) - sellAmount*exp(-sellFXYield*expiry);
         FWDFX_Portfolio.Price = FWDFX_Portfolio.Price + FWDFX_Portfolio.FWDFX(i).Price;

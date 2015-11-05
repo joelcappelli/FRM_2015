@@ -7,7 +7,7 @@ function VAR = equityPortfolio_histSimDeltaGammaVAR(CI,holdingTdays,combinedEqui
     S = repmat(combinedEquityPortfolio.RF(valDateIndex,:),size(RFreturns_252periods,1),1);
     dS = S.*RFreturns_252periods;
 
-    dP_deltaGamma = sort(dS*transpose(combinedEquityPortfolio.Deltas) + 0.5*(dS.*dS)*transpose(combinedEquityPortfolio.Gammas));
+    dP_deltaGamma = sort(dS*transpose(combinedEquityPortfolio.DeltasAndLinearPos) + 0.5*(dS.*dS)*transpose(combinedEquityPortfolio.Gammas));
     pointer = round( (1-CI)*length(dP_deltaGamma) + 0.1 );
     pointer = reshape(pointer, length(pointer),1);
     pointer = max(pointer, ones(length(pointer),1));

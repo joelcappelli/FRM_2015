@@ -22,11 +22,11 @@ function combinedEquityPortfolio = equityPortfolio_Price_GetRF(combinedEquityPor
             combinedEquityPortfolio.sharePositions(:,numRF) = 0 ;
 
             combinedEquityPortfolio.optionPositions(:,numRF) = OwnOrSold*numShares;
-            combinedEquityPortfolio.Deltas(:,numRF) = OwnOrSold*delta*numShares;
+            combinedEquityPortfolio.DeltasAndLinearPos(:,numRF) = OwnOrSold*delta*numShares;
             combinedEquityPortfolio.Gammas(:,numRF) = OwnOrSold*gamma*numShares;
         else
             combinedEquityPortfolio.optionPositions(:,index) = combinedEquityPortfolio.optionPositions(:,index) + OwnOrSold*numShares;
-            combinedEquityPortfolio.Deltas(:,index) = combinedEquityPortfolio.Deltas(:,index) + OwnOrSold*delta*numShares;
+            combinedEquityPortfolio.DeltasAndLinearPos(:,index) = combinedEquityPortfolio.DeltasAndLinearPos(:,index) + OwnOrSold*delta*numShares;
             combinedEquityPortfolio.Gammas(:,index) = combinedEquityPortfolio.Gammas(:,index) + OwnOrSold*gamma*numShares;
         end
     end
@@ -44,13 +44,13 @@ function combinedEquityPortfolio = equityPortfolio_Price_GetRF(combinedEquityPor
             combinedEquityPortfolio.RF(:,numRF) = combinedEquityPortfolio.PhysicalShares_Portfolio.RF(:,i);
 
             combinedEquityPortfolio.sharePositions(:,numRF) = OwnOrSold*numShares;          
-            combinedEquityPortfolio.Deltas(:,numRF) = OwnOrSold*numShares;  
+            combinedEquityPortfolio.DeltasAndLinearPos(:,numRF) = OwnOrSold*numShares;  
 
             combinedEquityPortfolio.optionPositions(:,numRF) = 0 ;
             combinedEquityPortfolio.Gammas(:,numRF) = 0;
         else
             combinedEquityPortfolio.sharePositions(:,index) = combinedEquityPortfolio.sharePositions(:,index) + OwnOrSold*numShares;        
-            combinedEquityPortfolio.Deltas(:,index) = combinedEquityPortfolio.Deltas(:,index) + OwnOrSold*numShares;
+            combinedEquityPortfolio.DeltasAndLinearPos(:,index) = combinedEquityPortfolio.DeltasAndLinearPos(:,index) + OwnOrSold*numShares;
         end
     end
 end

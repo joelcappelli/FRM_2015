@@ -1,4 +1,4 @@
-function VAR = BondPortfolio_deltaAnalyVAR(CI,holdingTdays,couponBond_Portfolio,valuationDate,workbookSheetNames,workbookDates)
+function VAR = BondPortfolio_durAnalyVAR(CI,holdingTdays,couponBond_Portfolio,valuationDate,workbookSheetNames,workbookDates)
     
     alpha = norminv(CI);
     valDateIndex = find(returnDates(couponBond_Portfolio.YieldCode,workbookSheetNames,workbookDates) == valuationDate);

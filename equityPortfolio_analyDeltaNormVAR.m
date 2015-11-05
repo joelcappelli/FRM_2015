@@ -7,6 +7,6 @@ function VAR = equityPortfolio_analyDeltaNormVAR(CI,holdingTdays,combinedEquityP
     alpha = norminv(CI);
     covars = cov(RFreturns);
     S = combinedEquityPortfolio.RF(valDateIndex,:);
-    xdelta = transpose(combinedEquityPortfolio.Deltas.*S);
+    xdelta = transpose(combinedEquityPortfolio.DeltasAndLinearPos.*S);
     VAR = alpha*sqrt(holdingTdays)*sqrt(xdelta'*covars*xdelta);   
 end
