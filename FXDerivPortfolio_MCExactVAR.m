@@ -1,4 +1,4 @@
-function VAR = FXDerivPortfolio_MCExactVAR(sims, CI,holdingTdays,FXOptions_Portfolio,FWDFX_Portfolio,valuationDate,workbookSheetNames,workbookDates,workbookCodes,workbookNumericData)
+function VAR_ETL = FXDerivPortfolio_MCExactVAR(sims, CI,holdingTdays,FXOptions_Portfolio,FWDFX_Portfolio,valuationDate,workbookSheetNames,workbookDates,workbookCodes,workbookNumericData)
     dates = returnDates(FXOptions_Portfolio.FXSheet,workbookSheetNames,workbookDates);
     valDateIndex = find(dates == valuationDate);
     [valuDateYearFracsDomestic, ~, valuDateDomesticYields] = returnYieldCurveData(FXOptions_Portfolio.DomesticYieldCurveSheet,workbookSheetNames,workbookDates,workbookCodes,workbookNumericData,valuationDate);
@@ -70,5 +70,6 @@ function VAR = FXDerivPortfolio_MCExactVAR(sims, CI,holdingTdays,FXOptions_Portf
     pointer = round( (1-CI)*length(dP) + 0.1 );
     pointer = reshape(pointer, length(pointer),1);
     pointer = max(pointer, ones(length(pointer),1));
-    VAR = -dP(pointer); 
+    VAR_ETL(1) = -dP(pointer); 
+    VAR_ETL(2) = -mean(dP(1:pointer));
 end

@@ -13,5 +13,5 @@ function VAR = equityPortfolio_analyDeltaGammaVAR(CI,holdingTdays,combinedEquity
     S2 = transpose(combinedEquityPortfolio.RF(valDateIndex,:).*combinedEquityPortfolio.RF(valDateIndex,:));
     gammaCovarS2 = diag(combinedEquityPortfolio.Gammas)*covars*S2;
     
-    VAR = alpha*sqrt(holdingTdays)*sqrt(xdelta'*covars*xdelta + 0.5*gammaCovarS2'*gammaCovarS2); 
+    VAR = alpha*sqrt(holdingTdays)*sqrt(xdelta'*covars*xdelta + 0.5*(gammaCovarS2')*gammaCovarS2); 
 end

@@ -1,4 +1,4 @@
-function VAR = equityPortfolio_MCExactVAR(sims,CI,holdingTdays,ShareOptions_Portfolio,PhysicalShares_Portfolio,valuationDate,workbookSheetNames,workbookDates,workbookCodes,workbookNumericData)
+function VAR_ETL = equityPortfolio_MCExactVAR(sims,CI,holdingTdays,ShareOptions_Portfolio,PhysicalShares_Portfolio,valuationDate,workbookSheetNames,workbookDates,workbookCodes,workbookNumericData)
     dates = returnDates(ShareOptions_Portfolio.pricesSheet,workbookSheetNames,workbookDates);
     valDateIndex = find(dates == valuationDate);
     [valuDateYearFracs, ~, valuDateYields] = returnYieldCurveData(ShareOptions_Portfolio.DomesticYieldCurveSheet,workbookSheetNames,workbookDates,workbookCodes,workbookNumericData,valuationDate);
@@ -57,5 +57,6 @@ function VAR = equityPortfolio_MCExactVAR(sims,CI,holdingTdays,ShareOptions_Port
     pointer = round( (1-CI)*length(dP) + 0.1 );
     pointer = reshape(pointer, length(pointer),1);
     pointer = max(pointer, ones(length(pointer),1));
-    VAR = -dP(pointer); 
+    VAR_ETL(1) = -dP(pointer); 
+    VAR_ETL(2) = -mean(dP(1:pointer));
 end

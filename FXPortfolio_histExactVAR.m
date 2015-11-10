@@ -1,4 +1,4 @@
-function VAR = FXPortfolio_histExactVAR(FX_Portfolio, CI, holdingTdays,workbookSheetNames,workbookDates,valuationDate)
+function VAR_ETL = FXPortfolio_histExactVAR(FX_Portfolio, CI, holdingTdays,workbookSheetNames,workbookDates,valuationDate)
     
     valDateIndex = find(returnDates(FX_Portfolio.exchaRateSheet,workbookSheetNames,workbookDates) == valuationDate);
     
@@ -11,5 +11,6 @@ function VAR = FXPortfolio_histExactVAR(FX_Portfolio, CI, holdingTdays,workbookS
     pointer = reshape(pointer, length(pointer),1);
     pointer = max(pointer, ones(length(pointer),1));
 
-    VAR = -FX_Portfolio.Price * portReturns(pointer);
+    VAR_ETL(1) = -FX_Portfolio.Price * portReturns(pointer);
+    VAR_ETL(2) = -FX_Portfolio.Price *mean(portReturns(1:pointer));
 end
