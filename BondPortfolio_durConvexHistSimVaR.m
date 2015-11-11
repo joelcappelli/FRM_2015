@@ -1,4 +1,4 @@
-function VAR_ETL = BondPortfolio_durConvexHistSimVaR(CI,holdingTdays,couponBond_Portfolio,valuationDate,workbookSheetNames,workbookDates)
+function VAR_ETL = BondPortfolio_durConvexHistSimVaR(CI,holdingTdays,couponBond_Portfolio,valuationDate,workbookSheetNames,workbookDates,plotTitle)
     
     valDateIndex = find(returnDates(couponBond_Portfolio.YieldCode,workbookSheetNames,workbookDates) == valuationDate);
     
@@ -17,4 +17,6 @@ function VAR_ETL = BondPortfolio_durConvexHistSimVaR(CI,holdingTdays,couponBond_
     % typically VAR is presented as positive value
     VAR_ETL(1) = -histSimDeltaP(pointer);
     VAR_ETL(2) = -mean(histSimDeltaP(1:pointer));
+    
+    drawPNL_HistogramPlotWithNorm(-VAR_ETL(1)*1000000,histSimDeltaP*1000000,CI,plotTitle)
 end

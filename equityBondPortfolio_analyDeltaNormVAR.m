@@ -11,7 +11,8 @@ function VAR = equityBondPortfolio_analyDeltaNormVAR(CI,holdingTdays,portfolio,v
     RFyieldChanges = diff(portfolio.RF((valDateIndex-numDays):valDateIndex,bondIndex),1,1);
 
     RFreturns(:,stockIndex) = RFstockReturns;
-    RFreturns(:,bondIndex) = RFyieldChanges;
+    %modified duration
+    RFreturns(:,bondIndex) = RFyieldChanges./repmat((1+portfolio.RF(valDateIndex,bondIndex)),numDays,1);
     
     alpha = norminv(CI);
     covars = cov(RFreturns);
