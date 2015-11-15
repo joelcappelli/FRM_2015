@@ -1,17 +1,32 @@
-function VAR_ETL = equityPortfolio_histSimExactVAR(CI,holdingTdays,ShareOptions_Portfolio,PhysicalShares_Portfolio,valuationDate,workbookSheetNames,workbookDates,workbookCodes,workbookNumericData)
+function VAR_ETL = equityPortfolio_histSimExactVAR(CI,holdingTdays,ShareOptions_Portfolio,PhysicalShares_Portfolio,valuationDate,workbookSheetNames,workbookDates,workbookCodes,workbookNumericData,plotTitle)
     dates = returnDates(ShareOptions_Portfolio.pricesSheet,workbookSheetNames,workbookDates);
     valDateIndex = find(dates == valuationDate);
     [valuDateYearFracs, ~, valuDateYields] = returnYieldCurveData(ShareOptions_Portfolio.DomesticYieldCurveSheet,workbookSheetNames,workbookDates,workbookCodes,workbookNumericData,valuationDate);
 
-    ShareOptions_RFreturns_252periods = log(ShareOptions_Portfolio.RF((valDateIndex-252*holdingTdays):holdingTdays:(valDateIndex-1),:)./ShareOptions_Portfolio.RF((valDateIndex-251*holdingTdays):holdingTdays:valDateIndex,:));
-    PhysicalShares_RFreturns_252periods = log(PhysicalShares_Portfolio.RF((valDateIndex-252*holdingTdays):holdingTdays:(valDateIndex-1),:)./PhysicalShares_Portfolio.RF((valDateIndex-251*holdingTdays):holdingTdays:valDateIndex,:));
+    %non-overlapping data
+    if(holdingTdays > 1)
+        periods = 250;
+    else
+        periods = 1000;
+    end
     
-    ShareOptions_S = repmat(ShareOptions_Portfolio.RF(valDateIndex,:),size(ShareOptions_RFreturns_252periods,1),1);
-    ShareOptions_dS = ShareOptions_S.*ShareOptions_RFreturns_252periods;
+    ShareOptions_RFreturns = RFreturns(ShareOptions_Portfolio.RF(1:valDateIndex,:),periods,holdingTdays,'reldiff');
+    
+    %non-overlapping data
+    if(holdingTdays > 1)
+        periods = 250;
+    else
+        periods = 1000;
+    end
+    
+    PhysicalShares_RFreturns = RFreturns(PhysicalShares_Portfolio.RF(1:valDateIndex,:),periods,holdingTdays,'reldiff');
+    
+    ShareOptions_S = repmat(ShareOptions_Portfolio.RF(valDateIndex,:),size(ShareOptions_RFreturns,1),1);
+    ShareOptions_dS = ShareOptions_S.*ShareOptions_RFreturns;
     ShareOptions_Snew = ShareOptions_S + ShareOptions_dS;
     
-    PhysicalShares_S = repmat(PhysicalShares_Portfolio.RF(valDateIndex,:),size(PhysicalShares_RFreturns_252periods,1),1);
-    PhysicalShares_dS = PhysicalShares_S.*PhysicalShares_RFreturns_252periods;
+    PhysicalShares_S = repmat(PhysicalShares_Portfolio.RF(valDateIndex,:),size(PhysicalShares_RFreturns,1),1);
+    PhysicalShares_dS = PhysicalShares_S.*PhysicalShares_RFreturns;
     
     Vnew = zeros(size(ShareOptions_Snew,1),1);
     
@@ -56,4 +71,8 @@ function VAR_ETL = equityPortfolio_histSimExactVAR(CI,holdingTdays,ShareOptions_
     pointer = max(pointer, ones(length(pointer),1));
     VAR_ETL(1) = -dP(pointer); 
     VAR_ETL(2) = -mean(dP(1:pointer));
+    
+    if(~isempty(plotTitle))
+        drawPNL_HistogramPlotWithNorm(-VAR_ETL(1),dP,CI,plotTitle)
+    end
 end

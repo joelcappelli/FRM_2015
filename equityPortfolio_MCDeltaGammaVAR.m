@@ -1,4 +1,4 @@
-function VAR_ETL = equityPortfolio_histSimDeltaGammaVAR(CI,holdingTdays,combinedEquityPortfolio,valuationDate,workbookSheetNames,workbookDates,plotTitle)
+function VAR_ETL = equityPortfolio_MCDeltaGammaVAR(sims,CI,holdingTdays,combinedEquityPortfolio,valuationDate,workbookSheetNames,workbookDates,plotTitle)
     dates = returnDates(combinedEquityPortfolio.pricesSheet,workbookSheetNames,workbookDates);
     valDateIndex = find(dates == valuationDate);
     
@@ -11,9 +11,9 @@ function VAR_ETL = equityPortfolio_histSimDeltaGammaVAR(CI,holdingTdays,combined
     
     RFReturns_ = RFreturns(combinedEquityPortfolio.RF(1:valDateIndex,:),periods,holdingTdays,'reldiff');
     
-    S = repmat(combinedEquityPortfolio.RF(valDateIndex,:),size(RFReturns_,1),1);
-    dS = S.*RFReturns_;
-
+    S = repmat(combinedEquityPortfolio.RF(valDateIndex,:),sims,1);
+    dS = S.*PCA_RF_MV_GBM(RFReturns_,sims,0.99)';
+    
     dP_deltaGamma = sort(dS*transpose(combinedEquityPortfolio.DeltasAndLinearPos) + 0.5*(dS.*dS)*transpose(combinedEquityPortfolio.Gammas));
     pointer = round( (1-CI)*length(dP_deltaGamma) + 0.1 );
     pointer = reshape(pointer, length(pointer),1);

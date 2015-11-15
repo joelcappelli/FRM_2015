@@ -1,5 +1,5 @@
 function [str]=num2bank(num)
-     str = arrayfun(@(x) num2bankScalar(x) , num, 'UniformOutput', false) ;
+     str = cell2mat(arrayfun(@(x) num2bankScalar(x) , num, 'UniformOutput', false));
 end
 
 function [str]=num2bankScalar(num)

@@ -3,8 +3,13 @@ function VAR_ETL = BondPortfolio_durConvexHistSimVaR(CI,holdingTdays,couponBond_
     valDateIndex = find(returnDates(couponBond_Portfolio.YieldCode,workbookSheetNames,workbookDates) == valuationDate);
     
     %non-overlapping data
-    couponBond_PortfolioRF_last252periods = couponBond_Portfolio.RF((valDateIndex-252*holdingTdays):holdingTdays:(valDateIndex - holdingTdays),:);
-    diffRFYields = diff(couponBond_PortfolioRF_last252periods,1,1)';%take transpose for VAR calcs
+    if(holdingTdays > 1)
+        periods = 250;
+    else
+        periods = 1000;
+    end
+    
+    diffRFYields = RFreturns(couponBond_Portfolio.RF(1:valDateIndex,:),periods,holdingTdays,'diff')';%take transpose for VAR calcs
     
     PV_CF = couponBond_Portfolio.PV_CF;
     RF_yearFrac = couponBond_Portfolio.ZCB_yearFrac;
@@ -18,5 +23,7 @@ function VAR_ETL = BondPortfolio_durConvexHistSimVaR(CI,holdingTdays,couponBond_
     VAR_ETL(1) = -histSimDeltaP(pointer);
     VAR_ETL(2) = -mean(histSimDeltaP(1:pointer));
     
-    drawPNL_HistogramPlotWithNorm(-VAR_ETL(1)*1000000,histSimDeltaP*1000000,CI,plotTitle)
+    if(~isempty(plotTitle))
+        drawPNL_HistogramPlotWithNorm(-VAR_ETL(1)*1000000,histSimDeltaP*1000000,CI,plotTitle)
+    end
 end

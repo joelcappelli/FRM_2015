@@ -3,8 +3,6 @@ function VAR = BondPortfolio_durAnalyVAR(CI,holdingTdays,couponBond_Portfolio,va
     alpha = norminv(CI);
     valDateIndex = find(returnDates(couponBond_Portfolio.YieldCode,workbookSheetNames,workbookDates) == valuationDate);
     
-    x = transpose(couponBond_Portfolio.PV_CF.*couponBond_Portfolio.ZCB_yearFrac);       
-                
-    couponBond_PortfolioRF_last1000days = couponBond_Portfolio.RF((valDateIndex-999):valDateIndex,:);
-	VAR = alpha*sqrt(holdingTdays)*sqrt(x'*cov(diff(couponBond_PortfolioRF_last1000days,1,1))*x);   
+    x = transpose(couponBond_Portfolio.PV_CF.*couponBond_Portfolio.ZCB_yearFrac);                      
+    VAR = alpha*sqrt(holdingTdays)*sqrt(x'*cov(RFreturns(couponBond_Portfolio.RF(1:valDateIndex,:),999,1,'diff'))*x); 
 end

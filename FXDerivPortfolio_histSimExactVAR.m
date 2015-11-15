@@ -1,17 +1,32 @@
-function VAR_ETL = FXDerivPortfolio_histSimExactVAR(CI,holdingTdays,FXOptions_Portfolio,FWDFX_Portfolio,valuationDate,workbookSheetNames,workbookDates,workbookCodes,workbookNumericData)
+function VAR_ETL = FXDerivPortfolio_histSimExactVAR(CI,holdingTdays,FXOptions_Portfolio,FWDFX_Portfolio,valuationDate,workbookSheetNames,workbookDates,workbookCodes,workbookNumericData,plotTitle)
     dates = returnDates(FXOptions_Portfolio.FXSheet,workbookSheetNames,workbookDates);
     valDateIndex = find(dates == valuationDate);
     [valuDateYearFracsDomestic, ~, valuDateDomesticYields] = returnYieldCurveData(FXOptions_Portfolio.DomesticYieldCurveSheet,workbookSheetNames,workbookDates,workbookCodes,workbookNumericData,valuationDate);
 
-    FXOptions_RFreturns_252periods = log(FXOptions_Portfolio.RF((valDateIndex-252*holdingTdays):holdingTdays:(valDateIndex-1),:)./FXOptions_Portfolio.RF((valDateIndex-251*holdingTdays):holdingTdays:valDateIndex,:));
-    FWDFX_RFreturns_252periods = log(FWDFX_Portfolio.RF((valDateIndex-252*holdingTdays):holdingTdays:(valDateIndex-1),:)./FWDFX_Portfolio.RF((valDateIndex-251*holdingTdays):holdingTdays:valDateIndex,:));
+    %non-overlapping data
+    if(holdingTdays > 1)
+        periods = 250;
+    else
+        periods = 1000;
+    end
     
-    FXOptions_DomesticPerForeignFX_spotRate = repmat(FXOptions_Portfolio.RF(valDateIndex,:),size(FXOptions_RFreturns_252periods,1),1);
-    FXOptions_dRates = FXOptions_DomesticPerForeignFX_spotRate.*FXOptions_RFreturns_252periods;
+    FXOptions_RFreturns = RFreturns(FXOptions_Portfolio.RF(1:valDateIndex,:),periods,holdingTdays,'reldiff');
+    
+     %non-overlapping data
+    if(holdingTdays > 1)
+        periods = 250;
+    else
+        periods = 1000;
+    end
+    
+    FWDFX_RFreturns = RFreturns(FWDFX_Portfolio.RF(1:valDateIndex,:),periods,holdingTdays,'reldiff');
+    
+    FXOptions_DomesticPerForeignFX_spotRate = repmat(FXOptions_Portfolio.RF(valDateIndex,:),size(FXOptions_RFreturns,1),1);
+    FXOptions_dRates = FXOptions_DomesticPerForeignFX_spotRate.*FXOptions_RFreturns;
     FXOptions_newRates = FXOptions_DomesticPerForeignFX_spotRate + FXOptions_dRates;
     
-    FWDFX_DomesticPerForeignFX_spotRate = repmat(FWDFX_Portfolio.RF(valDateIndex,:),size(FWDFX_RFreturns_252periods,1),1);
-    FWDFX_dRates = FWDFX_DomesticPerForeignFX_spotRate.*FWDFX_RFreturns_252periods;
+    FWDFX_DomesticPerForeignFX_spotRate = repmat(FWDFX_Portfolio.RF(valDateIndex,:),size(FWDFX_RFreturns,1),1);
+    FWDFX_dRates = FWDFX_DomesticPerForeignFX_spotRate.*FWDFX_RFreturns;
     
     Vnew = zeros(size(FXOptions_newRates,1),1);
     
@@ -69,4 +84,8 @@ function VAR_ETL = FXDerivPortfolio_histSimExactVAR(CI,holdingTdays,FXOptions_Po
     pointer = max(pointer, ones(length(pointer),1));
     VAR_ETL(1) = -dP(pointer); 
     VAR_ETL(2) = -mean(dP(1:pointer));
+    
+    if(~isempty(plotTitle))
+        drawPNL_HistogramPlotWithNorm(-VAR_ETL(1)*1000000,dP*1000000,CI,plotTitle)
+    end
 end

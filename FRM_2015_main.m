@@ -14,7 +14,6 @@ workbookCodes = {};
 workbookNumericData = {};
     
 loadData = 1;
-
 if(loadData)   
     load('dateFormatIn.mat','dateFormatIn');
     load('valuationDate.mat','valuationDate');
@@ -94,51 +93,41 @@ fprintf('#######################################################################
 fprintf('Portfolio 1: Bond portfolio \n\n');
 fprintf('Valuation date: %s\n',datestr(valuationDate,dateFormatIn));
 for i = 1:size(couponBond_Portfolio.CouponBond,2)
-    fprintf('Value of bond %d: $%.2f  million AUD\n', i,couponBond_Portfolio.CouponBond(i).Price);
+    fprintf('Value of bond %d: $%s AUD\n', i,num2bank(couponBond_Portfolio.CouponBond(i).Price*1000000));
 end
-fprintf('Total value of bond portfolio: $%.2f  million AUD\n\n', couponBond_Portfolio.Price);
+fprintf('Total value of bond portfolio: $%s AUD\n\n', num2bank(couponBond_Portfolio.Price*1000000));
     
 CI = [0.95,0.99];
 holdingTdays = [1,10];
 sims = 100000;
-%numVarMethods = 3+2;
-% dispMat = zeros(numVarMethods,size(CI,2)*size(holdingTdays,2));
-% 
-% disp('-------------------------------------------------------------');
-% disp('|  Confid. Lvl (%)  |   95%   |   99%   |   95%   |   99%   |');
-% disp('-------------------------------------------------------------');
-% disp('| Holding T (days)  |   1     |    1    |   10    |   10    |');
-% disp('-------------------------------------------------------------');
-% 
-% method1 = 'durAnalyVAR           |';
-% method2 = 'durConvexHistSimVaR   |';
-% method3 = 'durConvexMCVaR        |';
-% method4 = 'durConvexHistSim ETL  |';
-% method5 ='durConvexMC ETL        |';
-% space = ' ';
-% 
-% fprintf(strcat(method1,space,num2str(dispMat(1,:)),'\n',method2,space,num2str(dispMat(2,:)),'\n',method3,space,num2str(dispMat(3,:)),'\n'));
-
+plotBond = 0;
 for j = 1:size(holdingTdays,2)
     for i = 1:size(CI,2)
         couponBond_Portfolio_durAnalyVAR = BondPortfolio_durAnalyVAR(CI(i),holdingTdays(j),couponBond_Portfolio,valuationDate,workbookSheetNames,workbookDates);
-        plotTitle = strcat('durConvexHistSim ',num2str(holdingTdays(j)),' day Period for Bond Portfolio');
+        couponBond_Portfolio_durConvexAnalyVAR = BondPortfolio_durConvexAnalyVAR(CI(i),holdingTdays(j),couponBond_Portfolio,valuationDate,workbookSheetNames,workbookDates);
+
+        if(plotBond)
+            plotTitle = strcat('durConvexHistSim: ',num2str(holdingTdays(j)),' day Period for Bond Portfolio');
+        else
+            plotTitle = [];
+        end
         couponBond_Portfolio_durConvexHistSimVaR_ETL = BondPortfolio_durConvexHistSimVaR(CI(i),holdingTdays(j),couponBond_Portfolio,valuationDate,workbookSheetNames,workbookDates,plotTitle);
-        couponBond_Portfolio_durConvexMCVaR_ETL = BondPortfolio_durConvexMCVaR(sims,CI(i),holdingTdays(j),couponBond_Portfolio,valuationDate,workbookSheetNames,workbookDates);
+        if(plotBond)
+            plotTitle = [];
+        else
+            plotTitle = [];
+        end
+        couponBond_Portfolio_durConvexMCVaR_ETL = BondPortfolio_durConvexMCVaR(sims,CI(i),holdingTdays(j),couponBond_Portfolio,valuationDate,workbookSheetNames,workbookDates,plotTitle);
         
-        fprintf('VAR with CI: %.2f%% and holding period of %d days\n', 100*CI(i),holdingTdays(j));
-        fprintf('durAnaly VAR of bond portfolio $%.2f AUD\n', couponBond_Portfolio_durAnalyVAR*1000000);
-        fprintf('durConvexHistSim VaR of bond portfolio $%.2f AUD\n', couponBond_Portfolio_durConvexHistSimVaR_ETL(1)*1000000);
-        fprintf('durConvexMC VaR of bond portfolio $%.2f AUD\n\n',couponBond_Portfolio_durConvexMCVaR_ETL(1)*1000000); 
+        fprintf('VAR with CI: %g%% and holding period of %d days\n', 100*CI(i),holdingTdays(j));
+        fprintf('durAnaly VAR of bond portfolio $%s AUD\n', num2bank(couponBond_Portfolio_durAnalyVAR*1000000));
+        fprintf('durConvexAnaly VAR of bond portfolio $%s AUD\n',num2bank(couponBond_Portfolio_durConvexAnalyVAR*1000000));
+        fprintf('durConvexHistSim VaR of bond portfolio $%s AUD\n', num2bank(couponBond_Portfolio_durConvexHistSimVaR_ETL(1)*1000000));
+        fprintf('durConvexMC VaR of bond portfolio $%s AUD\n\n',num2bank(couponBond_Portfolio_durConvexMCVaR_ETL(1)*1000000)); 
         
-        fprintf('durConvexHistSim ETL of bond portfolio $%.2f AUD\n', couponBond_Portfolio_durConvexHistSimVaR_ETL(2)*1000000);
-        fprintf('durConvexMC ETL of bond portfolio $%.2f AUD\n\n',couponBond_Portfolio_durConvexMCVaR_ETL(2)*1000000); 
+        fprintf('durConvexHistSim ETL of bond portfolio $%s AUD\n', num2bank(couponBond_Portfolio_durConvexHistSimVaR_ETL(2)*1000000));
+        fprintf('durConvexMC ETL of bond portfolio $%s AUD\n\n',num2bank(couponBond_Portfolio_durConvexMCVaR_ETL(2)*1000000)); 
         
-%         dispMat(1,i*j) = couponBond_Portfolio_durAnalyVAR;
-%         dispMat(2,i*j) = couponBond_Portfolio_durConvexHistSimVaR_ETL(1);
-%         dispMat(3,i*j) = couponBond_Portfolio_durConvexMCVaR_ETL(1);
-%         dispMat(4,i*j) = couponBond_Portfolio_durConvexHistSimVaR_ETL(2);
-%         dispMat(5,i*j) = couponBond_Portfolio_durConvexMCVaR_ETL(2);
     end
 end
 
@@ -175,26 +164,31 @@ FX_Portfolio = FXPortfolio_Price_GetRF(FX_Portfolio,workbookSheetNames,workbookD
 fprintf('Portfolio 2: Spot Foreign Exchange \n\n');
 fprintf('Valuation date: %s\n',datestr(valuationDate,dateFormatIn));
 for i = 1:size(FX_Portfolio.Currencies,2)
-    fprintf('Value of currency position %d: $%.2f AUD\n', i,FX_Portfolio.Currencies(i).DomesticEquivAmount*1000000);
+    fprintf('Value of currency position %d: $%s AUD\n', i,num2bank(FX_Portfolio.Currencies(i).DomesticEquivAmount*1000000));
 end
-fprintf('Total value of Spot FX portfolio: $%.2f AUD\n\n', FX_Portfolio.Price*1000000);
+fprintf('Total value of Spot FX portfolio: $%s AUD\n\n', num2bank(FX_Portfolio.Price*1000000));
     
 CI = [0.95,0.99];
 holdingTdays = [1,10];
-sims = 100000;
+plotFx = 0;
 for j = 1:size(holdingTdays,2)
     for i = 1:size(CI,2)
         FX_Portfolio_analyExactVAR = FXPortfolio_analyExactVAR(FX_Portfolio, CI(i), holdingTdays(j),workbookSheetNames,workbookDates,valuationDate);
-        FX_Portfolio_histVAR_ETL = FXPortfolio_histExactVAR(FX_Portfolio, CI(i), holdingTdays(j),workbookSheetNames,workbookDates,valuationDate);
+        if(plotFx)
+            plotTitle = strcat('histExact: ',num2str(holdingTdays(j)),' day Period for Spot FX Portfolio');
+        else
+            plotTitle = [];
+        end
+        FX_Portfolio_histVAR_ETL = FXPortfolio_histExactVAR(FX_Portfolio, CI(i), holdingTdays(j),workbookSheetNames,workbookDates,valuationDate,plotTitle);
         FX_Portfolio_MCExactVAR_ETL = FXPortfolio_MCExactVAR(sims,FX_Portfolio, CI(i), holdingTdays(j),workbookSheetNames,workbookDates,valuationDate);
         
-        fprintf('VAR with CI: %.2f%% and holding period of %d days\n', 100*CI(i),holdingTdays(j));
-        fprintf('analyExact VAR of FX portfolio $%.2f AUD\n', FX_Portfolio_analyExactVAR*1000000);
-        fprintf('histExact VAR of FX portfolio $%.2f AUD\n',FX_Portfolio_histVAR_ETL(1)*1000000);
-        fprintf('MCExact VAR of FX portfolio $%.2f AUD\n\n', FX_Portfolio_MCExactVAR_ETL(1)*1000000);
+        fprintf('VAR with CI: %g%% and holding period of %d days\n', 100*CI(i),holdingTdays(j));
+        fprintf('analyExact VAR of FX portfolio $%s AUD\n', num2bank(FX_Portfolio_analyExactVAR*1000000));
+        fprintf('histExact VAR of FX portfolio $%s AUD\n',num2bank(FX_Portfolio_histVAR_ETL(1)*1000000));
+        fprintf('MCExact VAR of FX portfolio $%s AUD\n\n', num2bank(FX_Portfolio_MCExactVAR_ETL(1)*1000000));
         
-        fprintf('histExact ETL of FX portfolio $%.2f AUD\n',FX_Portfolio_histVAR_ETL(2)*1000000);
-        fprintf('MCExact ETL of FX portfolio $%.2f AUD\n\n', FX_Portfolio_MCExactVAR_ETL(2)*1000000);
+        fprintf('histExact ETL of FX portfolio $%s AUD\n',num2bank(FX_Portfolio_histVAR_ETL(2)*1000000));
+        fprintf('MCExact ETL of FX portfolio $%s AUD\n\n', num2bank(FX_Portfolio_MCExactVAR_ETL(2)*1000000));
     end
 end
 
@@ -235,9 +229,9 @@ FXOptions_Portfolio = FXOptionsPortfolio_Price_GetRF(FXOptions_Portfolio,valuati
 fprintf('Portfolio 3: Foreign Exchange Options & Forward Foreign Exchange Contracts \n\n');
 fprintf('Valuation date: %s\n',datestr(valuationDate,dateFormatIn));
 for i = 1:size(FXOptions_Portfolio.FXOption,2)
-    fprintf('Value of FXOption position %d: $%.2f AUD\n', i,FXOptions_Portfolio.FXOption(i).Price*1000000);
+    fprintf('Value of FXOption position %d: $%s AUD\n', i,num2bank(FXOptions_Portfolio.FXOption(i).Price*1000000));
 end
-fprintf('Total value of FXOption portfolio: $%.2f AUD\n\n', FXOptions_Portfolio.Price*1000000);
+fprintf('Total value of FXOption portfolio: $%s AUD\n\n', num2bank(FXOptions_Portfolio.Price*1000000));
 
 %%
 % Portfolio 3
@@ -267,40 +261,54 @@ FWDFX_Portfolio = struct('FWDFX',[fwdfx1 fwdfx2 fwdfx3],'Price',0,'RF',[],'FXShe
 FWDFX_Portfolio = FWDFXPortfolio_Price_GetRF(FWDFX_Portfolio,valuationDate,workbookSheetNames,workbookDates,workbookCodes,workbookNumericData);
 
 for i = 1:size(FWDFX_Portfolio.FWDFX,2)
-    fprintf('Value of FWDFX position %d: $%.2f AUD\n', i,FWDFX_Portfolio.FWDFX(i).Price*1000000);
+    fprintf('Value of FWDFX position %d: $%s AUD\n', i,num2bank(FWDFX_Portfolio.FWDFX(i).Price*1000000));
 end
-fprintf('Total value of FWDFX portfolio: $%.2f AUD\n\n', FWDFX_Portfolio.Price*1000000);
+fprintf('Total value of FWDFX portfolio: $%s AUD\n\n', num2bank(FWDFX_Portfolio.Price*1000000));
 
 % 
-%.2fo through each portfolio, look for the same underlying create array of independent riskfactors 
+%so through each portfolio, look for the same underlying create array of independent riskfactors 
 combinedFXderivPortfolio = struct('FXOptions_Portfolio',FXOptions_Portfolio,'FWDFX_Portfolio',FWDFX_Portfolio,'Price',0,'RF',[],'FWDPositions',[],'FXoptionPositions',[],'DeltasAndLinearPos',[],'Gammas',[],'UnderlyingCode',{{}},'pricesSheet','exchange_rates');
 combinedFXderivPortfolio = FXderivPortfolio_Price_GetRF(combinedFXderivPortfolio);
-fprintf('Total value of FXderiv portfolio: $%.2f AUD\n\n', combinedFXderivPortfolio.Price*1000000);
+fprintf('Total value of FXderiv portfolio: $%s AUD\n\n', num2bank(combinedFXderivPortfolio.Price*1000000));
 
 CI = [0.95,0.99];
 holdingTdays = [1,10];
-
+plotFxDeriv = 0;
 for j = 1:size(holdingTdays,2)
     for i = 1:size(CI,2)
-        combinedFXderivPortfolio_analyDeltaNormVAR = equityPortfolio_analyDeltaNormVAR(CI(i),holdingTdays(j),combinedFXderivPortfolio,valuationDate,workbookSheetNames,workbookDates);
+        %combinedFXderivPortfolio_analyDeltaNormVAR = equityPortfolio_analyDeltaNormVAR(CI(i),holdingTdays(j),combinedFXderivPortfolio,valuationDate,workbookSheetNames,workbookDates);
         combinedFXderivPortfolio_analyDeltaGammaVAR = equityPortfolio_analyDeltaGammaVAR(CI(i),holdingTdays(j),combinedFXderivPortfolio,valuationDate,workbookSheetNames,workbookDates);        
 
-        combinedFXderivPortfolio_histSimDeltaNormVAR = equityPortfolio_histSimDeltaNormVAR(CI(i),holdingTdays(j),combinedFXderivPortfolio,valuationDate,workbookSheetNames,workbookDates);
-        combinedFXderivPortfolio_histSimDeltaGammaVAR = equityPortfolio_histSimDeltaGammaVAR(CI(i),holdingTdays(j),combinedFXderivPortfolio,valuationDate,workbookSheetNames,workbookDates);
-        combinedFXderivPortfolio_histSimExactVAR_ETL = FXDerivPortfolio_histSimExactVAR(CI(i),holdingTdays(j),FXOptions_Portfolio,FWDFX_Portfolio,valuationDate,workbookSheetNames,workbookDates,workbookCodes,workbookNumericData);
-        
-        combinedFXderivPortfolio_MCExactVAR_ETL = FXDerivPortfolio_MCExactVAR(sims, CI(i),holdingTdays(j),FXOptions_Portfolio,FWDFX_Portfolio,valuationDate,workbookSheetNames,workbookDates,workbookCodes,workbookNumericData);
+        %combinedFXderivPortfolio_histSimDeltaNormVAR = equityPortfolio_histSimDeltaNormVAR(CI(i),holdingTdays(j),combinedFXderivPortfolio,valuationDate,workbookSheetNames,workbookDates);
+        if(plotFxDeriv)
+            plotTitle = [];%plotTitle = strcat('histSimDeltaGamma: ',num2str(holdingTdays(j)),' day Period for FX Deriv. Portfolio');
+        else
+            plotTitle = [];
+        end
+        combinedFXderivPortfolio_histSimDeltaGammaVAR_ETL = equityPortfolio_histSimDeltaGammaVAR(CI(i),holdingTdays(j),combinedFXderivPortfolio,valuationDate,workbookSheetNames,workbookDates,plotTitle);
+        if(plotFxDeriv)
+            plotTitle = strcat('histExact: ',num2str(holdingTdays(j)),' day Period for FX Deriv. Portfolio');
+        else
+            plotTitle = [];
+        end
+        combinedFXderivPortfolio_histSimExactVAR_ETL = FXDerivPortfolio_histSimExactVAR(CI(i),holdingTdays(j),FXOptions_Portfolio,FWDFX_Portfolio,valuationDate,workbookSheetNames,workbookDates,workbookCodes,workbookNumericData,plotTitle);
+        if(plotFxDeriv)
+            plotTitle = strcat('MCExact: ',num2str(holdingTdays(j)),' day Period for FX Deriv. Portfolio');
+        else
+            plotTitle = [];
+        end        
+        combinedFXderivPortfolio_MCExactVAR_ETL = FXDerivPortfolio_MCExactVAR(sims, CI(i),holdingTdays(j),FXOptions_Portfolio,FWDFX_Portfolio,valuationDate,workbookSheetNames,workbookDates,workbookCodes,workbookNumericData,plotTitle);
 
-        fprintf('VAR with CI: %.2f%% and holding period of %d days\n', 100*CI(i),holdingTdays(j));
-        fprintf('analyDeltaNorm VAR of FXDeriv portfolio $%.2f AUD\n', combinedFXderivPortfolio_analyDeltaNormVAR);
-        fprintf('analyDeltaGamma VAR of FXDeriv portfolio $%.2f AUD\n', combinedFXderivPortfolio_analyDeltaGammaVAR);
-        fprintf('histSimDeltaNorm VAR of FXDeriv portfolio $%.2f AUD\n', combinedFXderivPortfolio_histSimDeltaNormVAR);
-        fprintf('histSimDeltaGamma VAR of FXDeriv portfolio $%.2f AUD\n', combinedFXderivPortfolio_histSimDeltaGammaVAR);
-        fprintf('histSimExact VAR of FXDeriv portfolio $%.2f AUD\n', combinedFXderivPortfolio_histSimExactVAR_ETL(1)*1000000);
-        fprintf('MCExact VAR of FXDeriv portfolio $%.2f AUD\n\n',combinedFXderivPortfolio_MCExactVAR_ETL(1)*1000000);
+        fprintf('VAR with CI: %g%% and holding period of %d days\n', 100*CI(i),holdingTdays(j));
+        %fprintf('analyDeltaNorm VAR of FXDeriv portfolio $%s AUD\n', num2bank(combinedFXderivPortfolio_analyDeltaNormVAR));
+        fprintf('analyDeltaGamma VAR of FXDeriv portfolio $%s AUD\n', num2bank(combinedFXderivPortfolio_analyDeltaGammaVAR));
+        %fprintf('histSimDeltaNorm VAR of FXDeriv portfolio $%s AUD\n', num2bank(combinedFXderivPortfolio_histSimDeltaNormVAR));
+        fprintf('histSimDeltaGamma VAR of FXDeriv portfolio $%s AUD\n', num2bank(combinedFXderivPortfolio_histSimDeltaGammaVAR_ETL(1)));
+        fprintf('histSimExact VAR of FXDeriv portfolio $%s AUD\n', num2bank(combinedFXderivPortfolio_histSimExactVAR_ETL(1)*1000000));
+        fprintf('MCExact VAR of FXDeriv portfolio $%s AUD\n\n',num2bank(combinedFXderivPortfolio_MCExactVAR_ETL(1)*1000000));
         
-        fprintf('histSimExact ETL of FXDeriv portfolio $%.2f AUD\n', combinedFXderivPortfolio_histSimExactVAR_ETL(2)*1000000);
-        fprintf('MCExact ETL of FXDeriv portfolio $%.2f AUD\n\n',combinedFXderivPortfolio_MCExactVAR_ETL(2)*1000000);
+        fprintf('histSimExact ETL of FXDeriv portfolio $%s AUD\n', num2bank(combinedFXderivPortfolio_histSimExactVAR_ETL(2)*1000000));
+        fprintf('MCExact ETL of FXDeriv portfolio $%s AUD\n\n',num2bank(combinedFXderivPortfolio_MCExactVAR_ETL(2)*1000000));
     end
 end
   
@@ -327,9 +335,9 @@ PhysicalShares_Portfolio = PhysicalSharesPortfolio_Price_GetRF(PhysicalShares_Po
 fprintf('Portfolio 4: Shares and share options \n\n');
 fprintf('Valuation date: %s\n',datestr(valuationDate,dateFormatIn));
 for i = 1:size(PhysicalShares_Portfolio.Share,2)
-    fprintf('Value of PhysicalShares position %d: $%.2f AUD\n', i,PhysicalShares_Portfolio.Share(i).Price);
+    fprintf('Value of PhysicalShares position %d: $%s AUD\n', i,num2bank(PhysicalShares_Portfolio.Share(i).Price));
 end
-fprintf('Total value of PhysicalShares portfolio: $%.2f AUD\n\n', PhysicalShares_Portfolio.Price);
+fprintf('Total value of PhysicalShares portfolio: $%s AUD\n\n', num2bank(PhysicalShares_Portfolio.Price));
 
 
 
@@ -345,39 +353,54 @@ ShareOptions_Portfolio = ShareOptionsPortfolio_Price_GetRF(ShareOptions_Portfoli
 
 % in $  
 for i = 1:size(ShareOptions_Portfolio.ShareOption,2)
-    fprintf('Value of ShareOptions position %d: $%.2f AUD\n', i,ShareOptions_Portfolio.ShareOption(i).Price);
+    fprintf('Value of ShareOptions position %d: $%s AUD\n', i,num2bank(ShareOptions_Portfolio.ShareOption(i).Price));
 end
-fprintf('Total value of ShareOptions portfolio: $%.2f AUD\n\n', ShareOptions_Portfolio.Price);
+fprintf('Total value of ShareOptions portfolio: $%s AUD\n\n',num2bank(ShareOptions_Portfolio.Price));
 
-%.2fo through each portfolio, look for the same underlying create array of independent riskfactors 
+%so through each portfolio, look for the same underlying create array of independent riskfactors 
 combinedEquityPortfolio = struct('ShareOptions_Portfolio',ShareOptions_Portfolio,'PhysicalShares_Portfolio',PhysicalShares_Portfolio,'Price',0,'RF',[],'sharePositions',[],'optionPositions',[],'DeltasAndLinearPos',[],'Gammas',[],'UnderlyingCode',{{}},'pricesSheet','stock prices');
 combinedEquityPortfolio = equityPortfolio_Price_GetRF(combinedEquityPortfolio);
-fprintf('Total value of Equity Portfolio: $%.2f AUD\n\n', combinedEquityPortfolio.Price);
+fprintf('Total value of Equity Portfolio: $%s AUD\n\n',num2bank(combinedEquityPortfolio.Price));
 
 CI = [0.95,0.99];
 holdingTdays = [1,10];
-
+plotEqui = 0;
 for j = 1:size(holdingTdays,2)
     for i = 1:size(CI,2)
-        combinedEquityPortfolio_analyDeltaNormVAR = equityPortfolio_analyDeltaNormVAR(CI(i),holdingTdays(j),combinedEquityPortfolio,valuationDate,workbookSheetNames,workbookDates);
+        %combinedEquityPortfolio_analyDeltaNormVAR = equityPortfolio_analyDeltaNormVAR(CI(i),holdingTdays(j),combinedEquityPortfolio,valuationDate,workbookSheetNames,workbookDates);
         combinedEquityPortfolio_analyDeltaGammaVAR = equityPortfolio_analyDeltaGammaVAR(CI(i),holdingTdays(j),combinedEquityPortfolio,valuationDate,workbookSheetNames,workbookDates);        
 
-        combinedEquityPortfolio_histSimDeltaNormVAR = equityPortfolio_histSimDeltaNormVAR(CI(i),holdingTdays(j),combinedEquityPortfolio,valuationDate,workbookSheetNames,workbookDates);
-        combinedEquityPortfolio_histSimDeltaGammaVAR = equityPortfolio_histSimDeltaGammaVAR(CI(i),holdingTdays(j),combinedEquityPortfolio,valuationDate,workbookSheetNames,workbookDates);
-        combinedEquityPortfolio_histSimExactVAR_ETL = equityPortfolio_histSimExactVAR(CI(i),holdingTdays(j),ShareOptions_Portfolio,PhysicalShares_Portfolio,valuationDate,workbookSheetNames,workbookDates,workbookCodes,workbookNumericData);
+        %combinedEquityPortfolio_histSimDeltaNormVAR = equityPortfolio_histSimDeltaNormVAR(CI(i),holdingTdays(j),combinedEquityPortfolio,valuationDate,workbookSheetNames,workbookDates);
+        if(plotEqui)
+            plotTitle = [];%plotTitle = strcat('histSimDeltaGamma: ',num2str(holdingTdays(j)),' day Period for Equity Portfolio');
+        else
+            plotTitle = [];
+        end
+        combinedEquityPortfolio_histSimDeltaGammaVAR_ETL = equityPortfolio_histSimDeltaGammaVAR(CI(i),holdingTdays(j),combinedEquityPortfolio,valuationDate,workbookSheetNames,workbookDates,plotTitle);
         
-        combinedEquityPortfolio_MCExactVAR_ETL = equityPortfolio_MCExactVAR(sims,CI(i),holdingTdays(j),ShareOptions_Portfolio,PhysicalShares_Portfolio,valuationDate,workbookSheetNames,workbookDates,workbookCodes,workbookNumericData);
+        if(plotEqui)
+            plotTitle = strcat('histExact: ',num2str(holdingTdays(j)),' day Period for Equity Portfolio');
+        else
+            plotTitle = [];
+        end
+        combinedEquityPortfolio_histSimExactVAR_ETL = equityPortfolio_histSimExactVAR(CI(i),holdingTdays(j),ShareOptions_Portfolio,PhysicalShares_Portfolio,valuationDate,workbookSheetNames,workbookDates,workbookCodes,workbookNumericData,plotTitle);
+        if(plotEqui)
+            plotTitle = strcat('MCExact: ',num2str(holdingTdays(j)),' day Period for Equity Portfolio');
+        else
+            plotTitle = [];
+        end        
+        combinedEquityPortfolio_MCExactVAR_ETL = equityPortfolio_MCExactVAR(sims,CI(i),holdingTdays(j),ShareOptions_Portfolio,PhysicalShares_Portfolio,valuationDate,workbookSheetNames,workbookDates,workbookCodes,workbookNumericData,plotTitle);
 
-        fprintf('VAR with CI: %.2f%% and holding period of %d days\n', 100*CI(i),holdingTdays(j));
-        fprintf('analyDeltaNorm VAR of Equity portfolio $%.2f AUD\n', combinedEquityPortfolio_analyDeltaNormVAR);
-        fprintf('analyDeltaGamma VAR of Equity portfolio $%.2f AUD\n', combinedEquityPortfolio_analyDeltaGammaVAR);
-        fprintf('histSimDeltaNorm VAR of Equity portfolio $%.2f AUD\n', combinedEquityPortfolio_histSimDeltaNormVAR);
-        fprintf('histSimDeltaGamma VAR of Equity portfolio $%.2f AUD\n', combinedEquityPortfolio_histSimDeltaGammaVAR);
-        fprintf('histSimExact VAR of Equity portfolio $%.2f AUD\n', combinedEquityPortfolio_histSimExactVAR_ETL(1));
-        fprintf('MCExact VAR of Equity portfolio $%.2f AUD\n\n', combinedEquityPortfolio_MCExactVAR_ETL(1));
+        fprintf('VAR with CI: %g%% and holding period of %d days\n', 100*CI(i),holdingTdays(j));
+        %fprintf('analyDeltaNorm VAR of Equity portfolio $%s AUD\n', num2bank(combinedEquityPortfolio_analyDeltaNormVAR));
+        fprintf('analyDeltaGamma VAR of Equity portfolio $%s AUD\n', num2bank(combinedEquityPortfolio_analyDeltaGammaVAR));
+        %fprintf('histSimDeltaNorm VAR of Equity portfolio $%s AUD\n', num2bank(combinedEquityPortfolio_histSimDeltaNormVAR));
+        fprintf('histSimDeltaGamma VAR of Equity portfolio $%s AUD\n', num2bank(combinedEquityPortfolio_histSimDeltaGammaVAR_ETL(1)));
+        fprintf('histSimExact VAR of Equity portfolio $%s AUD\n', num2bank(combinedEquityPortfolio_histSimExactVAR_ETL(1)));
+        fprintf('MCExact VAR of Equity portfolio $%s AUD\n\n', num2bank(combinedEquityPortfolio_MCExactVAR_ETL(1)));
         
-        fprintf('histSimExact ETL of Equity portfolio $%.2f AUD\n', combinedEquityPortfolio_histSimExactVAR_ETL(2));
-        fprintf('MCExact ETL of Equity portfolio $%.2f AUD\n\n', combinedEquityPortfolio_MCExactVAR_ETL(2));
+        fprintf('histSimExact ETL of Equity portfolio $%s AUD\n', num2bank(combinedEquityPortfolio_histSimExactVAR_ETL(2)));
+        fprintf('MCExact ETL of Equity portfolio $%s AUD\n\n', num2bank(combinedEquityPortfolio_MCExactVAR_ETL(2)));
     end
 end
   
@@ -417,27 +440,40 @@ swap_Portfolio = SwapPortfolio_Price_GetRF(swap_Portfolio,valuationDate,workbook
 fprintf('Portfolio 5: Interest rate swaps \n\n');
 fprintf('Valuation date: %s\n',datestr(valuationDate,dateFormatIn));
 for i = 1:size(swap_Portfolio.Swap,2)
-    fprintf('Value of IRS position %d: $%.2f AUD\n', i,swap_Portfolio.Swap(i).Price*1000000);
+    fprintf('Value of IRS position %d: $%s AUD\n', i,num2bank(swap_Portfolio.Swap(i).Price*1000000));
 end
-fprintf('Total value of IRS portfolio: $%.2f AUD\n\n', swap_Portfolio.Price*1000000);
+fprintf('Total value of IRS portfolio: $%s AUD\n\n', num2bank(swap_Portfolio.Price*1000000));
 
 CI = [0.95,0.99];
 holdingTdays = [1,10];
-sims = 100000;
+plotSwap = 0;
 for j = 1:size(holdingTdays,2)
     for i = 1:size(CI,2)
         swap_Portfolio_durAnalyVAR = BondPortfolio_durAnalyVAR(CI(i),holdingTdays(j),swap_Portfolio,valuationDate,workbookSheetNames,workbookDates);
-        plotTitle = strcat('durConvexHistSim ',num2str(holdingTdays(j)),' day Period for Swap Portfolio');
+        swap_Portfolio_durConvexAnalyVAR = BondPortfolio_durConvexAnalyVAR(CI(i),holdingTdays(j),swap_Portfolio,valuationDate,workbookSheetNames,workbookDates);
+
+        if(plotSwap)
+            plotTitle = strcat('durConvexHistSim: ',num2str(holdingTdays(j)),' day Period for Swap Portfolio');
+        else
+            plotTitle = [];
+        end
         swap_Portfolio_durConvexHistSimVaR_ETL = BondPortfolio_durConvexHistSimVaR(CI(i),holdingTdays(j),swap_Portfolio,valuationDate,workbookSheetNames,workbookDates,plotTitle);
-        swap_Portfolio_durConvexMCVaR_ETL = BondPortfolio_durConvexMCVaR(sims,CI(i),holdingTdays(j),swap_Portfolio,valuationDate,workbookSheetNames,workbookDates);
+        
+        if(plotSwap)
+            plotTitle = [];
+        else
+            plotTitle = [];
+        end
+        swap_Portfolio_durConvexMCVaR_ETL = BondPortfolio_durConvexMCVaR(sims,CI(i),holdingTdays(j),swap_Portfolio,valuationDate,workbookSheetNames,workbookDates,plotTitle);
     
-        fprintf('VAR with CI: %.2f%% and holding period of %d days\n', 100*CI(i),holdingTdays(j));
-        fprintf('deltaAnaly VAR of swap portfolio $%.2f AUD\n', swap_Portfolio_durAnalyVAR*1000000);
-        fprintf('deltaGammaHistSim VaR of swap portfolio $%.2f AUD\n', swap_Portfolio_durConvexHistSimVaR_ETL(1)*1000000);
-        fprintf('durConvexMC VaR of swap portfolio $%.2f AUD\n\n',swap_Portfolio_durConvexMCVaR_ETL(1)*1000000);    
+        fprintf('VAR with CI: %g%% and holding period of %d days\n', 100*CI(i),holdingTdays(j));
+        fprintf('deltaAnaly VAR of swap portfolio $%s AUD\n', num2bank(swap_Portfolio_durAnalyVAR*1000000));
+        fprintf('durConvexAnaly VAR of swap portfolio $%s AUD\n', num2bank(swap_Portfolio_durConvexAnalyVAR*1000000));
+        fprintf('deltaConvexHistSim VaR of swap portfolio $%s AUD\n', num2bank(swap_Portfolio_durConvexHistSimVaR_ETL(1)*1000000));
+        fprintf('durConvexMC VaR of swap portfolio $%s AUD\n\n',num2bank(swap_Portfolio_durConvexMCVaR_ETL(1)*1000000));    
  
-        fprintf('deltaGammaHistSim ETL of swap portfolio $%.2f AUD\n', swap_Portfolio_durConvexHistSimVaR_ETL(2)*1000000);
-        fprintf('durConvexMC ETL of swap portfolio $%.2f AUD\n\n',swap_Portfolio_durConvexMCVaR_ETL(2)*1000000);  
+        fprintf('deltaConvexHistSim ETL of swap portfolio $%s AUD\n', num2bank(swap_Portfolio_durConvexHistSimVaR_ETL(2)*1000000));
+        fprintf('durConvexMC ETL of swap portfolio $%s AUD\n\n',num2bank(swap_Portfolio_durConvexMCVaR_ETL(2)*1000000));  
     end
 end
 
@@ -445,29 +481,46 @@ fprintf('#######################################################################
 
 fprintf('Diversification Impacts on Portfolio 2 & 3 \n\n');
 
-fprintf('Total value of Spot FX portfolio: $%.2f AUD\n', FX_Portfolio.Price*1000000);
-fprintf('Total value of FXderiv portfolio: $%.2f AUD\n\n', combinedFXderivPortfolio.Price*1000000);
+fprintf('Total value of Spot FX portfolio: $%s AUD\n', num2bank(FX_Portfolio.Price*1000000));
+fprintf('Total value of FXderiv portfolio: $%s AUD\n\n', num2bank(combinedFXderivPortfolio.Price*1000000));
 
 %% Combination portfolios
-%.2fo through each portfolio, look for the same underlying create array of independent riskfactors 
+%so through each portfolio, look for the same underlying create array of independent riskfactors 
 combinedPortfolio1 = struct('FX_Portfolio',FX_Portfolio,'combinedFXderiv_Portfolio',combinedFXderivPortfolio,'Price',0,'RF',[],'DeltasAndLinearPos',[],'Gammas',[],'UnderlyingCode',{{}},'pricesSheet','exchange_rates');
 combinedPortfolio1 = combinationPortfolio1_Price_GetRF(combinedPortfolio1);
 
-fprintf('Total value of portfolio 2 & 3: $%.2f AUD\n\n', combinedPortfolio1.Price*1000000);
+fprintf('Total value of portfolio 2 & 3: $%s AUD\n\n', num2bank(combinedPortfolio1.Price*1000000));
 
 CI = [0.95,0.99];
 holdingTdays = [1,10];
+plotCombo1 = 0;
 for j = 1:size(holdingTdays,2)
     for i = 1:size(CI,2)
         FX_Portfolio_analyExactVAR = FXPortfolio_analyExactVAR(FX_Portfolio, CI(i), holdingTdays(j),workbookSheetNames,workbookDates,valuationDate);
         combinedFXderivPortfolio_analyDeltaGammaVAR = equityPortfolio_analyDeltaGammaVAR(CI(i),holdingTdays(j),combinedFXderivPortfolio,valuationDate,workbookSheetNames,workbookDates);        
 
         combinedPortfolio1_analyDeltaGammaVAR = equityPortfolio_analyDeltaGammaVAR(CI(i),holdingTdays(j),combinedPortfolio1,valuationDate,workbookSheetNames,workbookDates);        
+        if(plotCombo1)
+            plotTitle = strcat('histSimDeltaGamma: ',num2str(holdingTdays(j)),' day Period for Portfolio 2 & 3');
+        else
+            plotTitle = [];
+        end
+        combinedPortfolio1_histSimDeltaGammaVAR_ETL = equityPortfolio_histSimDeltaGammaVAR(CI(i),holdingTdays(j),combinedPortfolio1,valuationDate,workbookSheetNames,workbookDates,plotTitle);
+        if(plotCombo1)
+            plotTitle = [];%plotTitle = strcat('MCDeltaGamma: ',num2str(holdingTdays(j)),' day Period for Portfolio 2 & 3');
+        else
+            plotTitle = [];
+        end
+        combinedPortfolio1_MCDeltaGammaVAR_ETL = equityPortfolio_MCDeltaGammaVAR(sims,CI(i),holdingTdays(j),combinedPortfolio1,valuationDate,workbookSheetNames,workbookDates,plotTitle);
 
-        fprintf('VAR with CI: %.2f%% and holding period of %d days\n', 100*CI(i),holdingTdays(j));
-        fprintf('analyDelta Undiversifed VAR of portfolio 2 & 3 $%.2f AUD\n', FX_Portfolio_analyExactVAR + combinedFXderivPortfolio_analyDeltaGammaVAR);
-        fprintf('analyDelta Diversifed VAR of portfolio 2 & 3 $%.2f AUD\n\n', combinedPortfolio1_analyDeltaGammaVAR);
-
+        fprintf('VAR with CI: %g%% and holding period of %d days\n', 100*CI(i),holdingTdays(j));
+        fprintf('analyDeltaGamma Undiversifed VAR of portfolio 2 & 3 $%s AUD\n', num2bank(FX_Portfolio_analyExactVAR + combinedFXderivPortfolio_analyDeltaGammaVAR));
+        fprintf('analyDeltaGamma Diversifed VAR of portfolio 2 & 3 $%s AUD\n', num2bank(combinedPortfolio1_analyDeltaGammaVAR));
+        fprintf('histSimDeltaGamma Diversifed VAR of portfolio 2 & 3 $%s AUD\n', num2bank(combinedPortfolio1_histSimDeltaGammaVAR_ETL(1)));
+        fprintf('MCDeltaGamma Diversifed VAR of portfolio 2 & 3 $%s AUD\n\n', num2bank(combinedPortfolio1_MCDeltaGammaVAR_ETL(1)));
+        
+        fprintf('histSimDeltaGamma Diversifed ETL of portfolio 2 & 3 $%s AUD\n', num2bank(combinedPortfolio1_histSimDeltaGammaVAR_ETL(2)));
+        fprintf('MCDeltaGamma Diversifed ETL of portfolio 2 & 3 $%s AUD\n\n', num2bank(combinedPortfolio1_MCDeltaGammaVAR_ETL(2)));
     end
 end
 
@@ -475,33 +528,68 @@ fprintf('#######################################################################
 
 fprintf('Diversification Impacts on Portfolio 1 & 4 \n\n');
 
-fprintf('Total value of bond portfolio: $%.2f AUD\n', couponBond_Portfolio.Price*1000000);
-fprintf('Total value of physical shares portfolio: $%.2f AUD\n\n', PhysicalShares_Portfolio.Price);
+fprintf('Total value of bond portfolio: $%s AUD\n', num2bank(couponBond_Portfolio.Price*1000000));
+fprintf('Total value of physical shares portfolio: $%s AUD\n\n', num2bank(PhysicalShares_Portfolio.Price));
 
 % Combo portfolios
-%.2fo through each portfolio, look for the same underlying create array of independent riskfactors 
+%so through each portfolio, look for the same underlying create array of independent riskfactors 
 Blank_Portfolio = struct('ShareOption',[],'Price',0,'RF',[],'pricesSheet',[],'DomesticYieldCurveSheet',[]);
 physicalSharesEquity_Portfolio = struct('ShareOptions_Portfolio',Blank_Portfolio,'PhysicalShares_Portfolio',PhysicalShares_Portfolio,'Price',0,'RF',[],'sharePositions',[],'optionPositions',[],'DeltasAndLinearPos',[],'Gammas',[],'UnderlyingCode',{{}},'pricesSheet','stock prices');
 physicalSharesEquity_Portfolio = equityPortfolio_Price_GetRF(physicalSharesEquity_Portfolio);
 
-combinedPortfolio2 = struct('Bond_Portfolio',couponBond_Portfolio,'physicalSharesEquity_Portfolio',physicalSharesEquity_Portfolio,'Price',0,'RF',[],'DeltasAndLinearPos',[],'RF_type',{{}},'pricesSheet','stock prices');
+combinedPortfolio2 = struct('Bond_Portfolio',couponBond_Portfolio,'physicalSharesEquity_Portfolio',physicalSharesEquity_Portfolio,'Price',0,'RF',[],'DeltasAndLinearPos',[],'Gammas',[],'RF_type',{{}},'pricesSheet','stock prices');
 combinedPortfolio2 = combinationPortfolio2_Price_GetRF(combinedPortfolio2);
 
-fprintf('Total value of portfolio 1 & 4: $%.2f AUD\n\n', combinedPortfolio2.Price*1000000);
+fprintf('Total value of portfolio 1 & 4: $%s AUD\n\n', num2bank(combinedPortfolio2.Price*1000000));
 
 CI = [0.95,0.99];
 holdingTdays = [1,10];
+plotCombo2 = 0;
 for j = 1:size(holdingTdays,2)
     for i = 1:size(CI,2)
         physicalSharesEquity_Portfolio_analyDeltaNormVAR = equityPortfolio_analyDeltaNormVAR(CI(i),holdingTdays(j),physicalSharesEquity_Portfolio,valuationDate,workbookSheetNames,workbookDates);        
+        if(plotCombo2)
+            plotTitle = strcat('histSimExact: ',num2str(holdingTdays(j)),' day Period for Port.4 (shares only)');
+        else
+            plotTitle = [];
+        end
+        physicalSharesEquity_histSimDeltaGammaVAR_ETL = equityPortfolio_histSimDeltaGammaVAR(CI(i),holdingTdays(j),physicalSharesEquity_Portfolio,valuationDate,workbookSheetNames,workbookDates,plotTitle);
+        plotTitle = [];
+        physicalSharesEquity_MCDeltaGammaVAR_ETL = equityPortfolio_MCDeltaGammaVAR(sims,CI(i),holdingTdays(j),physicalSharesEquity_Portfolio,valuationDate,workbookSheetNames,workbookDates,plotTitle);
+
         couponBond_Portfolio_durAnalyVAR = BondPortfolio_durAnalyVAR(CI(i),holdingTdays(j),couponBond_Portfolio,valuationDate,workbookSheetNames,workbookDates);
+        couponBond_Portfolio_durConvexAnalyVAR = BondPortfolio_durConvexAnalyVAR(CI(i),holdingTdays(j),couponBond_Portfolio,valuationDate,workbookSheetNames,workbookDates);
 
-        combinedPortfolio2_analyDeltaGammaVAR = equityBondPortfolio_analyDeltaNormVAR(CI(i),holdingTdays(j),combinedPortfolio2,valuationDate,workbookSheetNames,workbookDates);        
+        combinedPortfolio2_analyDeltaNormVAR = equityBondPortfolio_analyDeltaNormVAR(CI(i),holdingTdays(j),combinedPortfolio2,valuationDate,workbookSheetNames,workbookDates);        
+        combinedPortfolio2_analyDeltaGammaVAR = equityBondPortfolio_analyDeltaGammaVAR(CI(i),holdingTdays(j),combinedPortfolio2,valuationDate,workbookSheetNames,workbookDates);
+        if(plotCombo2)
+            plotTitle = strcat('histSimDeltaGamma: ',num2str(holdingTdays(j)),' day Period for Portfolio 1 & 4');
+        else
+            plotTitle = [];
+        end
+        combinedPortfolio2_histSimDeltaGammaVAR_ETL = equityPortfolio_histSimDeltaGammaVAR(CI(i),holdingTdays(j),combinedPortfolio2,valuationDate,workbookSheetNames,workbookDates,plotTitle);
+        if(plotCombo2)
+             plotTitle = [];%plotTitle = strcat('histSimDeltaGamma: ',num2str(holdingTdays(j)),' day Period for Portfolio 1 & 4');
+        else
+            plotTitle = [];
+        end
+        combinedPortfolio2_MCDeltaGammaVAR_ETL = equityPortfolio_MCDeltaGammaVAR(sims,CI(i),holdingTdays(j),combinedPortfolio2,valuationDate,workbookSheetNames,workbookDates,plotTitle);
 
-        fprintf('VAR with CI: %.2f%% and holding period of %d days\n', 100*CI(i),holdingTdays(j));
-        fprintf('analyDelta Undiversifed VAR of portfolio 1 & 4 $%.2f AUD\n', couponBond_Portfolio_durAnalyVAR*1000000 + physicalSharesEquity_Portfolio_analyDeltaNormVAR);
-        fprintf('analyDelta Diversifed VAR of portfolio 1 & 4 $%.2f AUD\n\n', combinedPortfolio2_analyDeltaGammaVAR);
+        fprintf('VAR with CI: %g%% and holding period of %d days\n', 100*CI(i),holdingTdays(j));
+        fprintf('analyExact VAR of portfolio 4 (physical shares only) $%s AUD\n', num2bank(physicalSharesEquity_Portfolio_analyDeltaNormVAR));
+        fprintf('histSimExact VAR of portfolio 4 (physical shares only) $%s AUD\n', num2bank(physicalSharesEquity_histSimDeltaGammaVAR_ETL(1)));
+        fprintf('MCExact VAR of portfolio 4 (physical shares only) $%s AUD\n\n', num2bank(physicalSharesEquity_MCDeltaGammaVAR_ETL(1)));
 
+        %fprintf('analyDeltaNorm Undiversifed VAR of portfolio 1 & 4 $%s AUD\n', num2bank(couponBond_Portfolio_durAnalyVAR*1000000 + physicalSharesEquity_Portfolio_analyDeltaNormVAR));
+        fprintf('analyDeltaGamma Undiversifed VAR of portfolio 1 & 4 $%s AUD\n', num2bank(couponBond_Portfolio_durConvexAnalyVAR*1000000 + physicalSharesEquity_Portfolio_analyDeltaNormVAR));
+        
+        %fprintf('analyDeltaNorm Diversifed VAR of portfolio 1 & 4 $%s AUD\n', num2bank(combinedPortfolio2_analyDeltaNormVAR));
+        fprintf('analyDeltaGamma Diversifed VAR of portfolio 1 & 4 $%s AUD\n', num2bank(combinedPortfolio2_analyDeltaGammaVAR));
+        fprintf('histSimDeltaGamma Diversifed VAR of portfolio 1 & 4 $%s AUD\n', num2bank(combinedPortfolio2_histSimDeltaGammaVAR_ETL(1)));
+        fprintf('MCDeltaGamma Diversifed VAR of portfolio 1 & 4 $%s AUD\n\n', num2bank(combinedPortfolio2_MCDeltaGammaVAR_ETL(1)));
+        
+        fprintf('histSimDeltaGamma Diversifed ETL of portfolio 1 & 4 $%s AUD\n', num2bank(combinedPortfolio2_histSimDeltaGammaVAR_ETL(2)));
+        fprintf('MCDeltaGamma Diversifed ETL of portfolio 1 & 4 $%s AUD\n\n', num2bank(combinedPortfolio2_MCDeltaGammaVAR_ETL(2)));
     end
 end
 

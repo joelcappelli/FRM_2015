@@ -24,9 +24,10 @@ function FXOptions_Portfolio = FXOptionsPortfolio_Price_GetRF(FXOptions_Portfoli
     %     vol = sqrt(360)*stdv;
 
         %cont compounded returns
-        returns = log(DomesticPerForeignFX_rates((valDateIndex-360):(valDateIndex-1))./DomesticPerForeignFX_rates((valDateIndex-359):valDateIndex));
+        periods = 360;
+        returns = RFreturns(DomesticPerForeignFX_rates(1:valDateIndex,:),periods,1,'log');%log(DomesticPerForeignFX_rates((valDateIndex-360):(valDateIndex-1))./DomesticPerForeignFX_rates((valDateIndex-359):valDateIndex));
         stdv = std(returns);
-        vol = sqrt(360)*stdv;
+        vol = sqrt(periods)*stdv;
 
         OwnOrSold = FXOptions_Portfolio.FXOption(i).OwnOrSold;
         foreignAmount = FXOptions_Portfolio.FXOption(i).ForeignAmount;
